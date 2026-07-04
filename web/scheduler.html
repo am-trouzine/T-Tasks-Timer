@@ -1,0 +1,2024 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Activity Scheduler</title>
+    <style type="text/css">
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f5f7ff;
+        text-align: center;
+        padding: 20px;
+      }
+      .container {
+        max-width: 500px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      .timer-wrap {
+        width: 100%;
+        max-width: 280px;
+        margin: 10px auto;
+        position: relative;
+      }
+      svg {
+        width: 100%;
+        margin: auto;
+      }
+      .timer-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+      }
+      .time {
+        font-size: 36px;
+        line-height: 1;
+      }
+      .time > span {
+        font-family: monospace;
+      }
+      .time .min {
+        color: #000;
+      }
+      .time .sec {
+        color: #2b4bff;
+      }
+      .time .ms {
+        color: #888;
+        font-size: 20px;
+      }
+      .label {
+        margin-top: 8px;
+        color: #888;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .task-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin: 10px 0;
+        color: #333;
+      }
+      .schedule-info {
+        font-size: 12px;
+        color: #666;
+        margin: 5px 0;
+      }
+
+      .adjust-btns {
+        margin-top: 10px;
+      }
+      button {
+        padding: 8px 14px;
+        margin: 0 4px;
+        font-size: 13px;
+        cursor: pointer;
+        border: none;
+        border-radius: 40px;
+        background: #2b4bff;
+        color: white;
+      }
+      button:active {
+        -webkit-transform: scale(0.98);
+        transform: scale(0.98);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .nav-btns {
+        margin-top: 10px;
+      }
+      .nav-btns button,
+      .adjust-btns button {
+        background: #6c757d;
+      }
+      .status {
+        padding: 6px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-size: 12px;
+        background: #64748b;
+        color: white;
+      }
+      .status-running {
+        background: #22c55e;
+      }
+      .status-paused {
+        background: #f59e0b;
+      }
+      .status-idle {
+        background: #64748b;
+      }
+      .tab-row {
+        display: table;
+        table-layout: fixed;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .tab-cell {
+        display: table-cell;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 8px 8px 0 0;
+        min-width: 25%;
+        max-width: 45%;
+      }
+      .tab-cell > div {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tab-active {
+        background: #2b4bff;
+        color: white;
+      }
+      .tab-inactive {
+        background: #e0e0e0;
+        color: #333;
+      }
+      .log-panel {
+        background: #1e293b;
+        color: #a5f3c3;
+        padding: 12px;
+        border-radius: 0 0 12px 12px;
+        font-family: monospace;
+        font-size: 11px;
+        max-height: 200px;
+        overflow-y: auto;
+        text-align: left;
+      }
+      .bg-panel {
+        background: #f0f2f5;
+        border-radius: 0 0 12px 12px;
+        padding: 12px;
+        text-align: center;
+        min-height: 150px;
+      }
+      .bg-image-holder {
+        width: 100%;
+        min-height: 150px;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        border-radius: 8px;
+      }
+      .log-entry {
+        padding: 3px;
+        border-bottom: 1px solid #334155;
+      }
+      .tab-head {
+        width: 100%;
+      }
+      .tab-head td {
+        width: 30%;
+        vertical-align: middle;
+      }
+      .tab-head td BUTTON {
+        width: 90%;
+      }
+    </style>
+  </head>
+  <body>
+    <video
+      id="wakelock-video"
+      src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAABzVtZGF03gIATGF2YzYy
+LjI4LjEwMgACMEAOAAACYwYF//9f3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCAtIEgu
+MjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMjQgLSBodHRwOi8vd3d3LnZp
+ZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTow
+OjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4w
+MCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAg
+Y3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhy
+ZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRl
+PTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFt
+ZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJh
+X3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21w
+PTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACA
+AAAACmWIhAzyYoAAt94BGCAHARggBwAAAAVBmjgZ6gEYIAcBGCAHAAAABkGaVAZ6gAEYIAcBGCAH
+AAAABUGaYDPUARggBwAAAAVBmoAz1AEYIAcBGCAHAAAABUGaoDPUARggBwEYIAcAAAAFQZrAM9QB
+GCAHARggBwAAAAVBmuAz1AEYIAcAAAAFQZsAM9QBGCAHARggBwAAAAVBmyAz1AEYIAcBGCAHAAAA
+BUGbQDPUARggBwAAAAVBm2Az1AEYIAcBGCAHAAAABUGbgDPUARggBwEYIAcAAAAFQZugM9QBGCAH
+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"
+      loop
+      muted
+      playsinline
+      style="display: none"
+    ></video>
+    <div class="container">
+      <table class="tab-head">
+        <tr>
+          <td>
+            <button id="prevBtn" type="button">⏮️</button>
+          </td>
+          <td>
+            <div class="task-name" id="taskName">Jumping Jacks</div>
+            <div class="schedule-info" id="scheduleInfo">Task 1 of 5</div>
+          </td>
+          <td>
+            <button id="nextBtn" type="button">⏭️</button>
+          </td>
+        </tr>
+      </table>
+
+      <div class="timer-wrap">
+        <svg width="280" height="280" viewBox="0 0 280 280">
+          <circle
+            cx="140"
+            cy="140"
+            r="130"
+            fill="#fff"
+            stroke="#eef0ff"
+            stroke-width="2"
+          ></circle>
+          <g id="dots"></g>
+          <path
+            id="progress"
+            fill="none"
+            stroke="#2b4bff"
+            stroke-width="6"
+            stroke-linecap="round"
+          ></path>
+        </svg>
+        <div class="timer-text">
+          <div class="time">
+            <span class="hh" id="hh">00</span>:<span class="min" id="min"
+              >00</span
+            >:<span class="sec" id="sec">00</span
+            ><span class="ms" id="ms">.0</span>
+          </div>
+          <div class="label" id="timerModeLabel">Remaining</div>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="startBtn" type="button">▶ Start</button>
+        <button id="pauseBtn" type="button">⏸ Pause</button>
+        <button id="resetBtn" type="button">🔄 Reset</button>
+        <button id="reloadBtn" type="button">🔃 Reload</button>
+      </div>
+
+      <div class="adjust-btns">
+        <button id="add5Btn" type="button">+5 sec</button>
+        <button id="sub5Btn" type="button">-5 sec</button>
+        <button id="add10Btn" type="button">+10 sec</button>
+        <button id="sub10Btn" type="button">-10 sec</button>
+        <button id="add30Btn" type="button">+30 sec</button>
+        <button id="sub30Btn" type="button">-30 sec</button>
+      </div>
+
+      <!--div class="nav-btns">
+  <button id="prevBtn" type="button">◀ Previous Task</button>
+  <button id="nextBtn" type="button">Next Task ▶</button>
+ </div-->
+
+      <div class="status status-idle" id="statusDisplay">⏳ Ready</div>
+
+      <div class="tab-row">
+        <div id="tabLogBtn" class="tab-cell tab-active"><div>📋 Log</div></div>
+        <div id="tabBgBtn" class="tab-cell tab-inactive">
+          <div>🖼️ Background</div>
+        </div>
+      </div>
+      <div id="logPanel" class="log-panel">
+        <div class="log-entry">🎯 Activity Scheduler Ready</div>
+      </div>
+      <div id="bgPanel" class="bg-panel" style="display: none">
+        <div id="bgImageHolder" class="bg-image-holder">
+          <div style="padding: 60px 20px; color: #999">No background image</div>
+        </div>
+      </div>
+    </div>
+
+    <script data-id="fullProgram" type="text/javascript">
+      // ==================== ES5 SAFE - ANDROID 4.4.2 COMPATIBLE ====================
+
+      // ==================== DEFAULT JSON ====================
+      var fullProgram = {
+        main: {
+          title: "HICT Workout",
+          defaultLang: "en-US",
+          background: { imageId: "", soundId: "" },
+          logUtterances: false,
+          announceCompleted: true,
+        },
+        tasks: {
+          task_1781024104881_10816: {
+            name: "Jumping Jacks",
+            duration: { hours: "", minutes: "", seconds: "30" },
+            background: { imageId: "", soundId: "" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              everySeconds: "10",
+              fromStart: "10",
+              toEnd: "",
+            },
+            left: {
+              enabled: false,
+              everySeconds: "10",
+              fromStart: "",
+              toEnd: "",
+            },
+            actions: {
+              action_1781024206838_30386: {
+                type: "msg",
+                timingSeconds: "5",
+                payload: { text: "Keep going!", lang: "en-US" },
+              },
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          task_1781024223949_89640: {
+            name: "Rest",
+            duration: { hours: "", minutes: "", seconds: "15" },
+            background: { imageId: "", soundId: "" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: false,
+              everySeconds: "10",
+              fromStart: "",
+              toEnd: "",
+            },
+            left: {
+              enabled: true,
+              everySeconds: "10",
+              fromStart: "",
+              toEnd: "",
+            },
+            end: {
+              playTicks: false,
+              tickCount: "1",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+        },
+        schedule: {
+          1: { taskId: "task_1781024104881_10816", repeat: "1" },
+          2: { taskId: "task_1781024223949_89640", repeat: "2" },
+          3: { taskId: "task_1781024104881_10816", repeat: "1" },
+        },
+      };
+    </script>
+    <script type="text/javascript">
+      // ==================== GLOBALS ====================
+      var svgNS = "http://www.w3.org/2000/svg";
+      var dotsGroup = document.getElementById("dots");
+      var progressPath = document.getElementById("progress");
+
+      var scheduleList = [];
+      var currentScheduleIndex = 0;
+      var currentTask = null;
+      var currentTaskTotalSeconds = 0;
+
+      var backgroundAudio = null;
+      var originalVolume = 1.0;
+      var isDucking = false;
+      var userInteracted = false;
+      var timerMode = "remaining";
+
+      // DOM elements
+      var hhEl = document.getElementById("hh");
+      var minEl = document.getElementById("min");
+      var secEl = document.getElementById("sec");
+      var msEl = document.getElementById("ms");
+      var taskNameEl = document.getElementById("taskName");
+      var scheduleInfoEl = document.getElementById("scheduleInfo");
+      var statusDisplay = document.getElementById("statusDisplay");
+      var logPanel = document.getElementById("logPanel");
+      var startBtn = document.getElementById("startBtn");
+      var pauseBtn = document.getElementById("pauseBtn");
+      var resetBtn = document.getElementById("resetBtn");
+      var prevBtn = document.getElementById("prevBtn");
+      var nextBtn = document.getElementById("nextBtn");
+      var add5Btn = document.getElementById("add5Btn");
+      var sub5Btn = document.getElementById("sub5Btn");
+      var tabLogBtn = document.getElementById("tabLogBtn");
+      var tabBgBtn = document.getElementById("tabBgBtn");
+      var bgPanel = document.getElementById("bgPanel");
+      //===
+      var wakeLock = null,
+        locked = false;
+      var videoElement = document.getElementById("wakelock-video");
+
+      function lock() {
+        if (locked) return;
+        if (typeof Android !== "undefined" && Android.setWakeLock) {
+          Android.setWakeLock(true);
+          locked = true;
+          return;
+        }
+        // 1. Attempt Modern WakeLock API (Only if Promises exist)
+        if (typeof Promise !== "undefined" && "wakeLock" in navigator) {
+          navigator.wakeLock
+            .request("screen")
+            .then(function (lockObj) {
+              wakeLock = lockObj;
+              addLogEntry("✓ Native Wake Lock active.");
+            })
+            .catch(function (err) {
+              addLogEntry("⚠️ Wake Lock failed, fallback to video...");
+              playVideoFallback();
+            });
+        } else {
+          // 2. Fallback for Android 4.4.2
+          addLogEntry("⚠️ Wake Lock unsupported, using video fallback...");
+          playVideoFallback();
+        }
+        locked = true;
+      }
+
+      function unlock() {
+        if (typeof Android !== "undefined" && Android.setWakeLock) {
+          Android.setWakeLock(false);
+          locked = false;
+          return;
+        }
+        // Release modern wake lock
+        if (wakeLock) {
+          try {
+            if (typeof wakeLock.release === "function") wakeLock.release();
+          } catch (e) {}
+          wakeLock = null;
+        }
+        // Pause video fallback
+        if (videoElement) {
+          try {
+            videoElement.pause();
+          } catch (e) {}
+        }
+        locked = false;
+      }
+
+      function playVideoFallback() {
+        if (videoElement) {
+          // Android 4.4 requires a tiny base64 video or a blank stream to run smoothly without breaking
+          if (!videoElement.src || videoElement.src === "about:blank") {
+            // A 1-pixel transparent blank mp4 video snippet
+            videoElement.src =
+              "data:video/mp4;base64,AAAAHGZ0eXBtcDQyAAAAAG1wStandardBlankVideoData...";
+          }
+          try {
+            videoElement.play();
+          } catch (e) {}
+        }
+      }
+
+      // 3. Visibility Change Event Listener (Android 4.4 safe)
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) {
+          // User quit or minimized window -> release and pause everything
+          if (locked) pauseTimer(); //unlock();
+        } else {
+          // User came back -> Note: Android 4.4 requires user interaction
+          // to resume video play, so call your click-to-resume trigger here.
+          addLogEntry("⏸️ Waiting for user to click resume...");
+        }
+      });
+      // ==================== AUDIO ENGINE (untouched) ====================
+
+      function AuEngine() {
+        this.bgAudio = null;
+        this.currentAudio = null;
+        this.isDucked = false;
+        this.audioContext = null;
+
+        this.duckCount = 0;
+        this.isNative = typeof Android !== "undefined";
+
+        // Initialize Web Audio API if available (handles older webkit prefixes)
+        try {
+          var AudioContextClass =
+            window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            this.audioContext = new AudioContextClass();
+          }
+        } catch (e) {
+          this.audioContext = null;
+        }
+      }
+
+      // --- Main Requested External Interfaces ---
+
+      AuEngine.prototype.playBg = function (base64Src) {
+        if (this.isNative && Android.nativePlayBg) {
+          Android.nativePlayBg(base64Src);
+          return;
+        }
+        this.stopBg();
+        if (!base64Src) return;
+
+        // Use standard Audio constructor (safest cross-browser approach for base64 strings)
+        this.bgAudio = new Audio(base64Src);
+        this.bgAudio.loop = true;
+        this.bgAudio.volume = this.isDucked ? 0.2 : 1.0;
+
+        try {
+          this.bgAudio.play();
+        } catch (e) {}
+      };
+
+      AuEngine.prototype.playSound = function (base64Src) {
+        if (this.isNative && Android.nativePlaySound) {
+          Android.nativePlaySound(base64Src);
+          return;
+        }
+        this.stopSound();
+        if (!base64Src) return;
+
+        var self = this;
+        this.currentAudio = new Audio(base64Src);
+        this.currentAudio.volume = this.isDucked ? 0.2 : 1.0;
+        if (this.bgAudio) this.bgAudio.volume = 0.1;
+
+        var endedHandler = function () {
+          self.stopSound();
+        };
+
+        if (this.currentAudio.addEventListener) {
+          this.currentAudio.addEventListener("ended", endedHandler, false);
+        } else {
+          this.currentAudio.onended = endedHandler;
+        }
+
+        try {
+          this.currentAudio.play();
+        } catch (e) {
+          this.duck(false);
+        }
+      };
+
+      AuEngine.prototype.duck = function (on) {
+        if (on) {
+          this.duckCount++;
+          if (this.currentAudio) this.currentAudio.volume = 0.2;
+          else {
+            if (this.bgAudio) this.bgAudio.volume = 0.2;
+          }
+          this.isDucked = true;
+        } else {
+          if (this.duckCount > 0) this.duckCount--;
+          if (this.duckCount === 0) {
+            this.isDucked = false;
+            if (this.currentAudio) {
+              this.currentAudio.volume = 1.0;
+            } else if (this.bgAudio) {
+              this.bgAudio.volume = 1.0;
+            }
+          }
+        }
+      };
+
+      AuEngine.prototype.stopBg = function () {
+        if (this.isNative && Android.nativeStopBg) {
+          Android.nativeStopBg();
+          return;
+        }
+        if (this.bgAudio) {
+          try {
+            this.bgAudio.pause();
+            this.bgAudio.currentTime = 0;
+          } catch (e) {}
+          this.bgAudio = null;
+        }
+      };
+
+      AuEngine.prototype.stopSound = function () {
+        if (this.isNative && Android.nativeStopSound) {
+          Android.nativeStopSound();
+          return;
+        }
+        if (this.currentAudio) {
+          try {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+          } catch (e) {}
+          this.currentAudio = null;
+        }
+        if (this.bgAudio) this.bgAudio.volume = this.isDucked ? 0.2 : 1.0;
+      };
+
+      AuEngine.prototype.pauseAll = function () {
+        if (this.isNative && Android.nativePauseAll) {
+          Android.nativePauseAll();
+          return;
+        }
+        if (this.bgAudio) {
+          try {
+            this.bgAudio.pause();
+          } catch (e) {}
+        }
+        if (this.currentAudio) {
+          try {
+            this.currentAudio.pause();
+          } catch (e) {}
+        }
+      };
+
+      AuEngine.prototype.resumeAll = function () {
+        if (this.isNative && Android.nativeResumeAll) {
+          Android.nativeResumeAll();
+          return;
+        }
+        if (this.bgAudio) {
+          try {
+            this.bgAudio.volume = 1.0;
+            this.bgAudio.play();
+          } catch (e) {}
+        }
+        if (this.currentAudio) {
+          try {
+            if (this.bgAudio) this.bgAudio.volume = 0.1;
+            this.currentAudio.volume = 1.0;
+            this.currentAudio.play();
+          } catch (e) {}
+        }
+      };
+
+      AuEngine.prototype.stopAll = function () {
+        if (this.isNative && Android.nativeStopAll) {
+          Android.nativeStopAll();
+          return;
+        }
+        this.stopBg();
+        this.stopSound();
+        this.duckCount = 0;
+        this.isDucked = false;
+      };
+
+      // --- Oscillator / Fallback Methods for Beep & Tick ---
+
+      AuEngine.prototype.beep = function (fallbackBase64) {
+        this._playTone(1000, 0.15, fallbackBase64);
+      };
+
+      AuEngine.prototype.tick = function (fallbackBase64) {
+        this._playTone(800, 0.05, fallbackBase64);
+      };
+
+      AuEngine.prototype._playTone = function (freq, duration, fallbackBase64) {
+        if (this.isNative && Android.nativePlayTone) {
+          Android.nativePlayTone(freq, duration);
+          return;
+        }
+        var self = this;
+        this.duck(true);
+
+        if (this.audioContext) {
+          try {
+            var osc = this.audioContext.createOscillator();
+            var gain = this.audioContext.createGain
+              ? this.audioContext.createGain()
+              : this.audioContext.createGainNode();
+
+            osc.type = "sine";
+            osc.frequency.value = freq;
+            gain.gain.value = 0.3;
+
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+
+            // Handle cross-browser start/stop semantics for older Web Audio engines
+            if (osc.start) osc.start(0);
+            else if (osc.noteOn) osc.noteOn(0);
+
+            setTimeout(function () {
+              try {
+                if (osc.stop) osc.stop(0);
+                else if (osc.noteOff) osc.noteOff(0);
+              } catch (e) {}
+              osc.disconnect();
+              gain.disconnect();
+              self.duck(false);
+            }, duration * 1000);
+
+            return; // Logic succeeded via Web Audio
+          } catch (e) {}
+        }
+
+        // Fallback if AudioContext is unavailable/fails
+        if (fallbackBase64) {
+          var self = this;
+          var tone = new Audio(fallbackBase64);
+          var endedHandler = function () {
+            self.duck(false);
+          };
+          if (tone.addEventListener) {
+            tone.addEventListener("ended", endedHandler, false);
+          } else {
+            tone.onended = endedHandler;
+          }
+          try {
+            tone.play();
+          } catch (e) {
+            this.duck(false);
+          }
+        } else {
+          setTimeout(function () {
+            self.duck(false);
+          }, duration * 1000);
+        }
+      };
+      var AudioEngine = new AuEngine();
+
+      var trans = {
+        hours: { en: "hours", fr: "heures", ar: "ساعات" },
+        hour: { en: "hour", fr: "heure", ar: "ساعة" },
+        minutes: { en: "minutes", fr: "minutes", ar: "دقائق" },
+        minute: { en: "minute", fr: "minute", ar: "دقيقة" },
+        seconds: { en: "seconds", fr: "secondes", ar: "ثواني" },
+        second: { en: "second", fr: "seconde", ar: "ثانية" },
+        left: { en: "left", fr: "restantes", ar: "بقيت" },
+        elapsed: { en: "elapsed", fr: "écoulées", ar: "انقضت" },
+        "total duration": {
+          en: "total duration",
+          fr: "durée totale",
+          ar: "المدة الإجمالية",
+        },
+        "current time": {
+          en: "current time",
+          fr: "l'heure actuelle",
+          ar: "الوقت الحالي",
+        },
+        "next task": {
+          en: "next task",
+          fr: "tâche suivante",
+          ar: "المهمةُ المواليةُ",
+        },
+        started: { en: "started", fr: "commencée", ar: "بدأتْ" },
+        completed: { en: "completed", fr: "terminée", ar: 'اكتملت"' },
+        paused: { en: "paused", fr: "", ar: "" },
+        resumed: { en: "resumed", fr: "", ar: "" },
+        reset: { en: "reset", fr: "", ar: "" },
+      };
+
+      var speechTemplate = {
+        "total duration": {
+          en: "Total duration {time}",
+          fr: "Durée totale {time}",
+          ar: "المدة الإجمالية {time}",
+        },
+        "time left": {
+          en: "{time} left",
+          fr: "{time} restantes",
+          ar: "بقيت {time}",
+        },
+        "time elapsed": {
+          en: "{time} elapsed",
+          fr: "{time} écoulées",
+          ar: "انقضت {time}",
+        },
+        // --- New Additions ---
+        "task started": {
+          en: "{task} started",
+          fr: "Début de {task}", // Cleaner for audio than "{task} a commencé"
+          ar: "بدأت {task}",
+        },
+        "task completed": {
+          en: "{task} completed",
+          fr: "{task} terminée",
+          ar: "تمت {task}",
+        },
+        "all tasks completed": {
+          en: "All tasks in {activity} completed",
+          fr: "Toutes les tâches de {activity} sont terminées",
+          ar: "اكتملت جميع المهام في {activity}",
+        },
+        "next task": {
+          en: "Next task, {task}",
+          fr: "Tâche suivante, {task}",
+          ar: "المهمةُ المواليةُ: {task}",
+        },
+        "current time": {
+          en: "Current time, {time}",
+          fr: "Il est {time}", // Native way to state time ("Il est 14 heures")
+          ar: "الساعةُ الآنَ {time}",
+        },
+        // --- Missing essentials for timing sequences ---
+        "task paused": {
+          en: "{task} paused",
+          fr: "{task} en pause",
+          ar: "تم إيقاف {task} مؤقتًا",
+        },
+        "task resumed": {
+          en: "{task} resumed",
+          fr: "Reprise de {task}",
+          ar: "استئناف {task}",
+        },
+        "upcoming alert": {
+          en: "Get ready for {task}",
+          fr: "Préparez-vous pour {task}",
+          ar: "استعد لـ {task}",
+        },
+      };
+
+      function getLabel(label, lang) {
+        label = label.toString().toLowerCase();
+        var r;
+        if (label in trans) {
+          r =
+            lang in trans[label]
+              ? trans[label][lang]
+              : lang.split("-")[0].trim().toLowerCase() in trans[label]
+                ? trans[label][lang.split("-")[0].trim().toLowerCase()]
+                : label;
+        } else r = label;
+        return r;
+      }
+      function getSpeech(label) {
+        label = label.toString().trim().toLowerCase();
+        if (label in speechTemplate) {
+          label =
+            defLangCode in speechTemplate[label]
+              ? speechTemplate[label][defLangCode]
+              : speechTemplate[label]["en"];
+        }
+        return label;
+      }
+      // ==================== HELPER FUNCTIONS ====================
+      function pad2(n) {
+        return n < 10 ? "0" + n : "" + n;
+      }
+
+      function addLogEntry(message) {
+        var entry = document.createElement("div");
+        entry.className = "log-entry";
+        var now = new Date();
+        var timeStr =
+          pad2(now.getHours()) +
+          ":" +
+          pad2(now.getMinutes()) +
+          ":" +
+          pad2(now.getSeconds());
+        entry.innerText = "[" + timeStr + "] " + message;
+        logPanel.appendChild(entry);
+        logPanel.scrollTop = logPanel.scrollHeight;
+        while (logPanel.children.length > 50) {
+          logPanel.removeChild(logPanel.firstChild);
+        }
+      }
+
+      function updateStatus(text, type) {
+        statusDisplay.innerText = text;
+        statusDisplay.className = "status status-" + type;
+      }
+
+      // ==================== SVG TIMER FUNCTIONS ====================
+      function drawDots() {
+        for (var i = 0; i < 60; i++) {
+          var angle = (i / 60) * 2 * Math.PI - Math.PI / 2;
+          var x = 140 + 120 * Math.cos(angle);
+          var y = 140 + 120 * Math.sin(angle);
+          var dot = document.createElementNS(svgNS, "circle");
+          dot.setAttribute("cx", x);
+          dot.setAttribute("cy", y);
+          dot.setAttribute("r", 2.5);
+          dot.setAttribute("fill", "#d0d5ff");
+          dotsGroup.appendChild(dot);
+        }
+      }
+
+      function polarToCartesian(cx, cy, r, angle) {
+        return {
+          x: cx + r * Math.cos(angle),
+          y: cy + r * Math.sin(angle),
+        };
+      }
+
+      function describeArc(cx, cy, r, startAngle, endAngle) {
+        var start = polarToCartesian(cx, cy, r, endAngle);
+        var end = polarToCartesian(cx, cy, r, startAngle);
+        var largeArcFlag = endAngle - startAngle <= Math.PI ? "0" : "1";
+        return (
+          "M " +
+          start.x +
+          " " +
+          start.y +
+          " A " +
+          r +
+          " " +
+          r +
+          " 0 " +
+          largeArcFlag +
+          " 0 " +
+          end.x +
+          " " +
+          end.y
+        );
+      }
+
+      // ==================== BACKGROUND SOUND/IMAGE ====================
+      function getAudioById(mediaId) {
+        if (!fullProgram.media) return null;
+        if (
+          fullProgram.media[mediaId] &&
+          fullProgram.media[mediaId].type === "audio"
+        ) {
+          return fullProgram.media[mediaId];
+        }
+        return null;
+      }
+
+      function getImageById(mediaId) {
+        if (!fullProgram.media) return null;
+        if (
+          fullProgram.media[mediaId] &&
+          fullProgram.media[mediaId].type === "image"
+        ) {
+          return fullProgram.media[mediaId];
+        }
+        return null;
+      }
+
+      function playBackgroundSound(soundId) {
+        try {
+          //if (!userInteracted) return;
+          var audioObj = getAudioById(soundId);
+          if (!audioObj || !audioObj.src) return;
+          AudioEngine.playBg(audioObj.src);
+        } catch (e) {
+          alert("bg\n" + e);
+        }
+      }
+
+      function stopBackgroundSound() {
+        AudioEngine.stopAll();
+      }
+
+      function updateBackgroundImage(imageId) {
+        var holder = document.getElementById("bgImageHolder");
+        if (!holder) return;
+        if (!imageId) {
+          holder.style.backgroundImage = "none";
+          holder.innerHTML =
+            '<div style="padding: 60px 20px; color: #999;">No background image</div>';
+          return;
+        }
+        var imageObj = getImageById(imageId);
+        if (imageObj && imageObj.src) {
+          holder.style.backgroundImage = "url(" + imageObj.src + ")";
+          holder.style.backgroundSize = "cover";
+          holder.style.backgroundPosition = "center";
+          holder.innerHTML = "";
+        } else {
+          holder.style.backgroundImage = "none";
+          holder.innerHTML =
+            '<div style="padding: 60px 20px; color: #999;">Image not found: ' +
+            imageId +
+            "</div>";
+        }
+      }
+
+      // ==================== TTS ====================
+      function tts(txt, lang, cb) {
+        if (typeof Android !== "undefined" && Android.speakText) {
+          Android.speakText(txt, lang);
+          return;
+        }
+        AudioEngine.duck(true);
+
+        var u = new SpeechSynthesisUtterance(txt);
+        u.lang = lang || "en-US";
+
+        u.onend = function () {
+          AudioEngine.duck(false);
+          if (cb) cb();
+        };
+        u.onerror = function () {
+          AudioEngine.duck(false);
+          if (cb) cb();
+        };
+        addLogEntry(txt);
+        speechSynthesis.speak(u);
+      }
+
+      function clearTTS() {
+        if ("speechSynthesis" in window) {
+          speechSynthesis.cancel();
+          AudioEngine.duck(false);
+        }
+      }
+
+      function playBeep() {
+        AudioEngine.beep();
+      }
+      function playTick() {
+        AudioEngine.tick();
+      }
+
+      function playSoundById(soundId) {
+        var audioObj = getAudioById(soundId);
+        if (!audioObj || !audioObj.src) return;
+        AudioEngine.playSound(audioObj.src);
+      }
+
+      //===
+      function updateDisplay(totalMs, remainingMs) {
+        var remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
+        var elapsedSec = Math.max(
+          0,
+          Math.floor((totalMs - remainingMs) / 1000),
+        );
+
+        var hours = Math.floor(remainingSec / 3600);
+        var mins = Math.floor((remainingSec % 3600) / 60);
+        var secs = remainingSec % 60;
+        hhEl.innerHTML = pad2(hours);
+        minEl.innerHTML = pad2(mins);
+        secEl.innerHTML = pad2(secs);
+
+        var ms = Math.floor((remainingMs % 1000) / 100);
+        msEl.innerHTML = "." + ms;
+
+        var labelEl = document.querySelector(".label");
+        if (labelEl) {
+          labelEl.innerText =
+            timerMode === "remaining" ? "Remaining" : "Elapsed";
+        }
+
+        // Update SVG progress circle
+        var pct = totalMs > 0 ? (totalMs - remainingMs) / totalMs : 0;
+        if (timerMode === "remaining") {
+          var remainingPct = 1 - pct;
+          if (remainingPct > 0 && remainingPct < 1) {
+            var endAngle = -Math.PI / 2 + remainingPct * 2 * Math.PI;
+            progressPath.setAttribute(
+              "d",
+              describeArc(140, 140, 120, -Math.PI / 2, endAngle),
+            );
+          } else if (remainingPct >= 1) {
+            progressPath.setAttribute(
+              "d",
+              describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5),
+            );
+          } else {
+            progressPath.setAttribute("d", "");
+          }
+        } else {
+          if (pct > 0 && pct < 1) {
+            var endAngleElapsed = -Math.PI / 2 + pct * 2 * Math.PI;
+            progressPath.setAttribute(
+              "d",
+              describeArc(140, 140, 120, -Math.PI / 2, endAngleElapsed),
+            );
+          } else if (pct >= 1) {
+            progressPath.setAttribute(
+              "d",
+              describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5),
+            );
+          } else {
+            progressPath.setAttribute("d", "");
+          }
+        }
+      }
+      // ==================== SCHEDULER ENGINE ====================
+      var Scheduler = (function () {
+        var running = false;
+        var paused = false;
+        var startTimeMs = 0;
+        var remainingMs = 0;
+        var totalMs = 0;
+        var timerId = null;
+        var actionList = [];
+        var onCompleteCallback = null;
+        var stack = [];
+        var tickCallback = null;
+        var secQueu = null;
+        function runStack() {
+          if (stack.length === 0) return;
+          var task = stack.splice(0, 1)[0];
+          try {
+            task.fn.apply(null, task.params || []);
+          } catch (e) {}
+          if (stack.length > 0) {
+            setTimeout(runStack, 0);
+          }
+        }
+
+        function tick() {
+          if (!running || paused) return;
+
+          var now = Date.now();
+          var elapsedSinceStart = now - startTimeMs;
+          remainingMs = Math.max(0, totalMs - elapsedSinceStart);
+
+          var remainingSec = Math.floor(remainingMs / 1000);
+
+          if (tickCallback) tickCallback(totalMs, remainingMs);
+
+          //=== option 1===
+          if (secQueu != remainingSec) {
+            secQueu = remainingSec;
+            for (var i = 0; i < actionList.length; i++) {
+              if (actionList[i].sec === secQueu) {
+                stack.push({
+                  fn: actionList[i].fn,
+                  params: actionList[i].params,
+                });
+              }
+            }
+          }
+          //=== option 2===
+          /*
+  // Uncomment if you want to catch all seconds that passed since last tick
+  while (secQueu >= remainingSec) {
+   for (var i = 0; i < actionList.length; i++) {
+    if (actionList[i].sec === secQueu) {
+     stack.push({ fn: actionList[i].fn, params: actionList[i].params });
+    }
+   }
+   secQueu--;
+  }
+  */
+
+          if (stack.length > 0) runStack();
+
+          if (remainingMs <= 0) {
+            stop();
+            if (onCompleteCallback) onCompleteCallback();
+            return;
+          }
+
+          timerId = setTimeout(tick, 200); // 200ms is enough
+        }
+
+        function start(totalSeconds, actions, onTick, onComplete) {
+          stop();
+          actionList = actions || [];
+          running = true;
+          paused = false;
+          tickCallback = onTick;
+          secQueu = totalSeconds + 1;
+          totalMs = totalSeconds * 1000;
+          remainingMs = totalMs;
+
+          onCompleteCallback = onComplete;
+          startTimeMs = Date.now();
+
+          tick();
+        }
+
+        function pause() {
+          paused = true;
+        }
+
+        function resume() {
+          if (!running || !paused) return;
+          paused = false;
+          startTimeMs = Date.now() - (totalMs - remainingMs);
+          tick();
+        }
+
+        function stop() {
+          running = false;
+          paused = false;
+          if (timerId) clearTimeout(timerId);
+          timerId = null;
+          stack = [];
+        }
+
+        function addSeconds(secs) {
+          try {
+            if (!running) return false;
+            if ("speechSynthesis" in window) {
+              clearTTS();
+            }
+            var wasPaused = paused;
+            paused = true;
+            if (secs < 0) {
+              var r = Math.floor(remainingMs / 1000);
+              if (r <= Math.abs(secs)) {
+                secs = -(r - 0.5);
+              }
+            }
+            startTimeMs += secs * 1000;
+            //totalMs+= secs * 1000;
+            //secQueu += secs*1
+            paused = wasPaused;
+          } catch (e) {
+            alert(e + "");
+          }
+          return false;
+        }
+
+        return {
+          start: start,
+          pause: pause,
+          resume: resume,
+          stop: stop,
+          //    reset: reset,
+          addSeconds: addSeconds,
+          isRunning: function () {
+            return running;
+          },
+          isPaused: function () {
+            return paused;
+          },
+          getRemainingSeconds: function () {
+            return Math.floor(remainingMs / 1000);
+          },
+          getElapsedSeconds: function () {
+            return Math.floor((totalMs - remainingMs) / 1000);
+          },
+          getTotalSeconds: function () {
+            return Math.floor(totalMs / 1000);
+          },
+        };
+      })();
+
+      // ==================== BUILD ACTIONS FOR CURRENT TASK ====================
+      var currentActionsList = [];
+      function rebuildActionsForCurrentTask() {
+        try {
+          var task = currentTask;
+          var total = currentTaskTotalSeconds;
+
+          currentActionsList = [];
+          function addAction(sec, fn, params) {
+            if (sec >= 0 && sec <= total) {
+              currentActionsList.push({
+                sec: sec,
+                fn: fn,
+                params: params || [],
+              });
+            }
+          }
+          //===bg===
+          addAction(total, updateBackgroundImage, [
+            task.background.imageId || fullProgram.main.background.imageId,
+          ]);
+          addAction(0, updateBackgroundImage, [
+            fullProgram.main.background.imageId,
+          ]);
+          addAction(total, playBackgroundSound, [
+            task.background.soundId || fullProgram.main.background.soundId,
+          ]);
+          addAction(0, stopBackgroundSound || playBackgroundSound, [
+            fullProgram.main.background.soundId,
+          ]);
+
+          // Task started announcement
+          if (task.options && task.options.announceStarted) {
+            addAction(total, function () {
+              var t = getSpeech("task started").replace("{task}", task.name);
+              tts(t, defLang);
+            });
+          }
+
+          // Total duration announcement
+          if (task.options && task.options.announceTotalDuration) {
+            addAction(total - 1, function () {
+              var t = getSpeech("total duration").replace(
+                "{time}",
+                formatTimeHMForSpeech(total),
+              );
+              tts(t, defLang);
+            });
+          }
+
+          // Left announcements (time remaining)
+          if (task.left && task.left.enabled) {
+            var everyLeft = parseInt(task.left.everySeconds, 10);
+            var fromLeft = parseInt(task.left.fromStart, 10) || 0;
+            var toEndLeft = parseInt(task.left.toEnd, 10);
+            var maxLeft = toEndLeft ? total - toEndLeft : total;
+
+            if (everyLeft >= 1) {
+              for (var i = fromLeft; i <= maxLeft; i += everyLeft) {
+                if (i > 0 && i < total) {
+                  var remaining = total - i;
+                  addAction(remaining, announceLeft, [remaining]);
+                }
+              }
+            }
+          }
+
+          // Elapsed announcements
+          if (task.elapsed && task.elapsed.enabled) {
+            var everyElapsed = parseInt(task.elapsed.everySeconds, 10);
+            var fromElapsed = parseInt(task.elapsed.fromStart, 10) || 0;
+            var toEndElapsed = parseInt(task.elapsed.toEnd, 10);
+            var maxElapsed = toEndElapsed ? total - toEndElapsed : total;
+
+            if (everyElapsed >= 1) {
+              for (var i = fromElapsed; i <= maxElapsed; i += everyElapsed) {
+                if (i > 0 && i < total) {
+                  addAction(total - i, announceElapsed, [i]);
+                }
+              }
+            }
+          }
+
+          // Custom actions from JSON
+          if (task.actions) {
+            for (var key in task.actions) {
+              if (task.actions.hasOwnProperty(key)) {
+                var action = task.actions[key];
+                var sec = parseInt(action.timingSeconds, 10);
+                if (!isNaN(sec) && sec >= 0 && sec <= total) {
+                  if (action.type === "msg" || action.type === "tts") {
+                    addAction(
+                      total - sec,
+                      (function (text, lang) {
+                        return function () {
+                          tts(text, lang);
+                        };
+                      })(action.payload.text, action.payload.lang || "en-US"),
+                    );
+                  } else if (action.type === "snd") {
+                    addAction(
+                      total - sec,
+                      (function (soundId) {
+                        return function () {
+                          playSoundById(soundId);
+                        };
+                      })(action.payload.soundId),
+                    );
+                  } else if (action.type === "count") {
+                    var start = parseFloat(action.payload.start || 0);
+                    var end = parseFloat(action.payload.end || 0);
+                    var step = parseFloat(action.payload.step || 1) || 1;
+                    var interval =
+                      parseInt(action.payload.interval || 1, 10) || 1;
+                    if (start >= 0 && end >= 0 && step >= 0 && interval >= 0) {
+                      var j = sec;
+                      if (start <= end) {
+                        for (var i = start; i <= end; i += step) {
+                          addAction(total - j, tts, [i, defLang]);
+                          j += interval;
+                        }
+                      } else {
+                        for (var i = start; i >= end; i -= step) {
+                          addAction(total - j, tts, [i, defLang]);
+                          j += interval;
+                        }
+                      }
+                    }
+                  } else if (action.type === "beep") {
+                    addAction(total - sec, function () {
+                      playBeep();
+                    });
+                  } else if (action.type === "pre_msg") {
+                    // Handle predefined messages
+                    var value = action.payload.value;
+                    if (value === "next") {
+                      addAction(total - sec, function () {
+                        announceNext();
+                      });
+                    } else if (value === "time") {
+                      addAction(total - sec, function () {
+                        announceClockTime();
+                      });
+                    } else if (value === "elapsed") {
+                      addAction(
+                        total - sec,
+                        (function (s) {
+                          return function () {
+                            announceElapsed(s);
+                          };
+                        })(sec),
+                      );
+                    } else if (value === "left") {
+                      addAction(
+                        total - sec,
+                        (function (s) {
+                          return function () {
+                            announceLeft(total - s);
+                          };
+                        })(sec),
+                      );
+                    } else if (value === "beep") {
+                      addAction(total - sec, function () {
+                        playBeep();
+                      });
+                    } else if (value === "tick") {
+                      addAction(total - sec, function () {
+                        playTick();
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // End of task actions (ticks)
+          if (task.end) {
+            if (task.end.playTicks) {
+              var tickCount = parseInt(task.end.tickCount, 10);
+              if (tickCount > 0) {
+                for (var i = tickCount; i >= 1; i--) {
+                  addAction(i, function () {
+                    playTick();
+                  });
+                }
+              }
+            }
+
+            // Final beep and completion at second 0
+            addAction(0, function () {
+              if (task.end.beep) {
+                playBeep();
+              }
+              if (task.end.announceCompleted) {
+                var t = getSpeech("task completed").replace(
+                  "{task}",
+                  task.name,
+                );
+                tts(t, defLang);
+              }
+              finishTask();
+            });
+          }
+
+          // Sort actions by sec descending (higher sec = earlier in countdown)
+          currentActionsList.sort(function (a, b) {
+            return b.sec - a.sec;
+          });
+        } catch (e) {
+          alert("rebuildActionsForCurrentTask:\n" + e);
+        }
+      }
+
+      function getArabicTimeUnit(val, type) {
+        // type can be 'hour', 'minute', or 'second'
+        if (val === 1)
+          return type === "hour"
+            ? "ساعة"
+            : type === "minute"
+              ? "دقيقة"
+              : "ثانية";
+        if (val === 2)
+          return type === "hour"
+            ? "ساعتان"
+            : type === "minute"
+              ? "دقيقتان"
+              : "ثانيتان";
+
+        // 3 to 10 uses plural
+        if (val >= 3 && val <= 10) {
+          if (type === "hour") return val + " " + "ساعات";
+          if (type === "minute") return val + " " + "دقائق";
+          return val + " " + "ثواني";
+        }
+
+        // 11+ uses singular accusative (looks like singular)
+        return (
+          val +
+          " " +
+          (type === "hour" ? "ساعة" : type === "minute" ? "دقيقة" : "ثانية")
+        );
+      }
+      // ==================== ANNOUNCEMENT FUNCTIONS ====================
+      function formatTimeHMForSpeech(seconds) {
+        var lang = defLangCode;
+
+        var hours = Math.floor(seconds / 3600);
+        var mins = Math.floor((seconds % 3600) / 60);
+        var secs = seconds % 60;
+
+        var parts = [];
+        if (hours > 0) {
+          parts.push(
+            lang == "ar"
+              ? getArabicTimeUnit(hours, "hour")
+              : hours + " " + getLabel("hour" + (hours > 1 ? "s" : ""), lang),
+          );
+        }
+        if (mins > 0) {
+          parts.push(
+            lang == "ar"
+              ? getArabicTimeUnit(mins, "minute")
+              : mins + " " + getLabel("minute" + (mins > 1 ? "s" : ""), lang),
+          );
+        }
+        if (secs > 0 || parts.length === 0) {
+          parts.push(
+            lang == "ar"
+              ? getArabicTimeUnit(secs, "second")
+              : secs + " " + getLabel("second" + (secs > 1 ? "s" : ""), lang),
+          );
+        }
+
+        return parts.join(" ");
+      }
+
+      function announceNext() {
+        var nextIndex = currentScheduleIndex + 1;
+
+        if (
+          scheduleList[nextIndex] &&
+          fullProgram.tasks[scheduleList[nextIndex]]
+        ) {
+          var task = fullProgram.tasks[scheduleList[nextIndex]];
+          var hours = parseInt(task.duration.hours, 10) || 0;
+          var minutes = parseInt(task.duration.minutes, 10) || 0;
+          var seconds = parseInt(task.duration.seconds, 10) || 0;
+          var total = hours * 3600 + minutes * 60 + seconds;
+          var template =
+            speechTemplate["next task"][defLangCode] ||
+            speechTemplate["next task"]["en"];
+          var outputSpeech = template.replace("{task}", task.name);
+
+          tts(outputSpeech, defLang);
+          return;
+        }
+      }
+
+      function announceClockTime() {
+        var now = new Date();
+        var template =
+          speechTemplate["current time"][defLangCode] ||
+          speechTemplate["current time"]["en"];
+        var standardTimeText = formatClockTimeForSpeech(now);
+        var outputSpeech = template.replace("{time}", standardTimeText);
+
+        tts(outputSpeech, defLang);
+      }
+      function formatClockTimeForSpeech(dateObj) {
+        dateObj = dateObj ? dateObj : new Date();
+        var h = dateObj.getHours();
+        var m = dateObj.getMinutes();
+
+        // Normalize language string
+        var L = defLangCode;
+
+        // --- ENGLISH (12-Hour AM/PM) ---
+        if (L === "en") {
+          var ampm = h >= 12 ? "PM" : "AM";
+          var hour12 = h % 12 || 12;
+          var minStr = m === 0 ? "" : m < 10 ? "O " + m : m; // "three O five" or "three fifteen"
+          return hour12 + " " + minStr + " " + ampm;
+        }
+
+        // --- FRENCH (24-Hour System) ---
+        if (L === "fr") {
+          if (h === 0 && m === 0) return "minuit";
+          if (h === 12 && m === 0) return "midi";
+
+          var hStr = h === 1 ? "une heure" : h + " heures";
+          var mStr = m === 0 ? "" : m < 10 ? "0" + m : m; // TTS engines read "14 heures 05" naturally
+
+          return hStr + (mStr ? " " + mStr : "");
+        }
+
+        // --- ARABIC (Natural Contextual Timing) ---
+        if (L === "ar") {
+          var hour12 = h % 12 || 12;
+          var arHour = "";
+
+          // Exact Hour Rules
+          var hourMap = {
+            1: "الواحدة",
+            2: "الثانية",
+            3: "الثالثة",
+            4: "الرابعة",
+            5: "الخامسة",
+            6: "السادسة",
+            7: "السابعة",
+            8: "الثامنة",
+            9: "التاسعة",
+            10: "العاشرة",
+            11: "الحادية عشرة",
+            12: "الثانية عشرة",
+          };
+          arHour = hourMap[hour12];
+
+          // Minutes phrasing
+          var arMin = "";
+          if (m === 0) {
+            arMin = "";
+          } else if (m === 15) {
+            arMin = "والربع";
+          } else if (m === 30) {
+            arMin = "والنصف";
+          } else if (m === 45) {
+            // For 45, it is elegant to say "Except a quarter" of the next hour,
+            // but for simplicity/accuracy in tasks, "and 45 minutes" is universally parsed:
+            arMin = "وخمس وأربعون دقيقة";
+          } else if (m === 1) {
+            arMin = "ودقيقة";
+          } else if (m === 2) {
+            arMin = "ودقيقتان";
+          } else if (m >= 3 && m <= 10) {
+            arMin = "و " + m + " دقائق";
+          } else {
+            arMin = "و " + m + " دقيقة";
+          }
+
+          // Time of day suffix (Sabahan / Masa'an)
+          var period = ""; /*(h >= 6 && h < 12) ? 'صباحًا' : 
+                 (h >= 12 && h < 18) ? 'مساءً' : 
+                 (h >= 18 && h < 24) ? 'مساءً' : 'فجرًا';*/
+
+          return arHour + (arMin ? " " + arMin : "") + " " + period;
+        }
+
+        // Fallback default
+        return h + ":" + (m < 10 ? "0" + m : m);
+      }
+
+      function announceElapsed(seconds) {
+        var t = getSpeech("time elapsed").replace(
+          "{time}",
+          formatTimeHMForSpeech(seconds),
+        );
+        tts(t, defLang);
+      }
+
+      function announceLeft(seconds) {
+        var t = getSpeech("time left").replace(
+          "{time}",
+          formatTimeHMForSpeech(seconds),
+        );
+        tts(t, defLang);
+      }
+
+      // ==================== TASK/SCHEDULE MANAGEMENT ====================
+      var defLang = "en-US",
+        defLangCode = "en";
+      function ensureScheduleExists(program) {
+        var hasSchedule = false;
+        if (program.schedule) {
+          for (var pos in program.schedule) {
+            var item = program.schedule[pos];
+            if (item.taskId && program.tasks && program.tasks[item.taskId]){
+              hasSchedule = true;
+              if (!item.repeat || parseInt(item.repeat, 10) < 1) {
+                item.repeat = "1";
+              }
+            } else delete program.schedule[pos];
+          }
+          if (hasSchedule) {
+            var sortedKeys = Object.keys(program.schedule).sort(function(a, b) {
+              return parseInt(a, 10) - parseInt(b, 10);
+            });
+            var newSchedule = {};
+            var counter = 1;
+            for (var i = 0; i < sortedKeys.length; i++) {
+              var key = sortedKeys[i];
+              newSchedule[counter++] = program.schedule[key];
+            }
+            program.schedule = newSchedule;
+          }
+        }
+        if (!hasSchedule) {
+          program.schedule = {};
+          var n = 1;
+          for (var i in program.tasks) {
+            program.schedule[n++] = { taskId: i, repeat: "1" };
+          }
+          addLogEntry(
+            "📝 Auto-created schedule: " + program.tasks.length + " tasks",
+          );
+        }
+        if (program && program.main && program.main.defaultLang) {
+          defLang = program.main.defaultLang.toString().trim();
+          defLangCode = defLang.split("-")[0].toLowerCase();
+        }
+
+        return program;
+      }
+
+      function buildScheduleList() {
+        scheduleList = [];
+        for (var pos in fullProgram.schedule) {
+          var item = fullProgram.schedule[pos];
+          if (
+            item.taskId &&
+            fullProgram.tasks &&
+            fullProgram.tasks[item.taskId]
+          ) {
+            var repeat = parseInt(item.repeat, 10) || 1;
+            for (var r = 0; r < repeat; r++) {
+              scheduleList.push(item.taskId);
+            }
+          }
+        }
+        addLogEntry("📋 Schedule built: " + scheduleList.length + " tasks");
+      }
+
+      function loadTaskByIndex(index) {
+        if (index < 0 || index >= scheduleList.length) {
+          addLogEntry("🏁 End of schedule");
+          return false;
+        }
+
+        var taskId = scheduleList[index];
+        for (var i in fullProgram.tasks) {
+          if (i === taskId) {
+            currentTask = fullProgram.tasks[i];
+            break;
+          }
+        }
+        if (!currentTask) return false;
+
+        var hours = parseInt(currentTask.duration.hours, 10) || 0;
+        var minutes = parseInt(currentTask.duration.minutes, 10) || 0;
+        var seconds = parseInt(currentTask.duration.seconds, 10) || 0;
+        currentTaskTotalSeconds = hours * 3600 + minutes * 60 + seconds;
+        currentScheduleIndex = index;
+        prevBtn.disabled = currentScheduleIndex == 0;
+        nextBtn.disabled = currentScheduleIndex == scheduleList.length - 1;
+
+        // ✅ REBUILD ACTIONS - after total seconds is set
+        rebuildActionsForCurrentTask();
+
+        taskNameEl.innerHTML = currentTask.name;
+        scheduleInfoEl.innerHTML =
+          "Task " + (index + 1) + " of " + scheduleList.length;
+
+        updateStatus("Ready", "idle");
+        addLogEntry(
+          "📌 Loaded: " +
+            currentTask.name +
+            " (" +
+            formatTimeHMForSpeech(currentTaskTotalSeconds) +
+            ")",
+        );
+        return true;
+      }
+
+      // ==================== TIMER CONTROL ====================
+      function startTimer() {
+        try {
+          if (!currentTask) return;
+          if (Scheduler.isRunning() && !Scheduler.isPaused()) return;
+
+          if (!userInteracted) {
+            userInteracted = true;
+          }
+
+          if (Scheduler.isPaused()) {
+            Scheduler.resume();
+            updateStatus("Running", "running");
+            addLogEntry("▶ Resumed");
+            tts("Resumed", "en-US");
+            AudioEngine.resumeAll();
+          } else {
+            Scheduler.start(
+              currentTaskTotalSeconds,
+              currentActionsList,
+              updateDisplay,
+              function () {},
+            );
+            addLogEntry("▶ Started: " + currentTask.name);
+          }
+          lock();
+        } catch (e) {
+          alert(e + "_startTimer");
+        }
+      }
+
+      function pauseTimer() {
+        if (!Scheduler.isRunning() || Scheduler.isPaused()) return;
+        Scheduler.pause();
+        updateStatus("Paused", "paused");
+        addLogEntry("⏸ Paused");
+        tts("Paused", "en-US");
+        unlock();
+        AudioEngine.pauseAll();
+      }
+
+      function resetTimer() {
+        var wasPaused = Scheduler.isPaused();
+        Scheduler.start(
+          currentTaskTotalSeconds,
+          currentActionsList,
+          updateDisplay,
+          function () {},
+        );
+        if (wasPaused) Scheduler.pause();
+        updateStatus("Ready", "idle");
+        addLogEntry("🔄 Reset current task");
+        tts("Reset", "en-US");
+      }
+
+      function addSecondsToTimer(secs) {
+        if (!currentTask) return;
+        if (Scheduler.isRunning()) {
+          Scheduler.addSeconds(secs);
+          addLogEntry(
+            (secs > 0 ? "➕ Added " : "➖ Subtracted ") +
+              Math.abs(secs) +
+              " sec",
+          );
+        }
+      }
+
+      function finishTask() {
+        addLogEntry("✅ Task finished: " + currentTask.name);
+        Scheduler.stop();
+
+        var nextIndex = currentScheduleIndex + 1;
+        if (loadTaskByIndex(nextIndex)) {
+          addLogEntry("➡️ Next task ready - auto starting");
+          startTimer();
+        } else {
+          addLogEntry("🏆 Program Complete!");
+          updateStatus("Complete!", "idle");
+          stopBackgroundSound();
+          if (fullProgram.main && fullProgram.main.announceCompleted) {
+            var t = getSpeech("all tasks completed").replace(
+              "{activity}",
+              fullProgram.main.title,
+            );
+            tts(t, defLang, stopBackgroundSound);
+          }
+          unlock();
+        }
+      }
+
+      function goToNextTask() {
+        try {
+          var wasRunning = Scheduler.isRunning();
+          var wasPaused = Scheduler.isPaused();
+
+          Scheduler.stop();
+          var nextIndex = currentScheduleIndex + 1;
+
+          if (loadTaskByIndex(nextIndex)) {
+            addLogEntry("➡️ Next task ready (manual)");
+
+            if (wasRunning && !wasPaused) {
+              // Auto-start if it was running
+              startTimer();
+            } else if (wasPaused) {
+              // Load in paused state - just show the task, don't start
+              updateStatus("Paused", "paused");
+            }
+          }
+        } catch (e) {
+          alert(e + "_goToNextTask");
+        }
+      }
+
+      function goToPrevTask() {
+        try {
+          var wasRunning = Scheduler.isRunning();
+          var wasPaused = Scheduler.isPaused();
+
+          Scheduler.stop();
+          var prevIndex = currentScheduleIndex - 1;
+
+          if (loadTaskByIndex(prevIndex)) {
+            addLogEntry("⬅️ Previous task ready");
+
+            if (wasRunning && !wasPaused) {
+              startTimer();
+            } else if (wasPaused) {
+              updateStatus("Paused", "paused");
+            }
+          } else {
+            addLogEntry("⚠️ Already at first task");
+          }
+        } catch (e) {
+          alert(e + "_goToNextTask");
+        }
+      }
+
+      function switchTab(tabName) {
+        var logPanelDiv = document.getElementById("logPanel");
+        var bgPanelDiv = document.getElementById("bgPanel");
+        if (tabName === "log") {
+          logPanelDiv.style.display = "block";
+          bgPanelDiv.style.display = "none";
+          tabLogBtn.className = "tab-cell tab-active";
+          tabBgBtn.className = "tab-cell tab-inactive";
+        } else {
+          logPanelDiv.style.display = "none";
+          bgPanelDiv.style.display = "block";
+          tabBgBtn.className = "tab-cell tab-active";
+          tabLogBtn.className = "tab-cell tab-inactive";
+        }
+      }
+
+      // ==================== INITIALIZATION ====================
+      function init() {
+        drawDots();
+        fullProgram = ensureScheduleExists(fullProgram);
+        buildScheduleList();
+        loadTaskByIndex(0);
+
+        startBtn.onclick = startTimer;
+        pauseBtn.onclick = pauseTimer;
+        resetBtn.onclick = resetTimer;
+        prevBtn.onclick = goToPrevTask;
+        nextBtn.onclick = goToNextTask;
+        add5Btn.onclick = function () {
+          addSecondsToTimer(5);
+        };
+        sub5Btn.onclick = function () {
+          addSecondsToTimer(-5);
+        };
+
+        /*
+var add10Btn = document.getElementById('add10Btn');
+var sub10Btn = document.getElementById('sub10Btn');
+var add30Btn = document.getElementById('add30Btn');
+var sub30Btn = document.getElementById('sub30Btn');
+*/
+        add10Btn.onclick = function () {
+          addSecondsToTimer(10);
+        };
+        sub10Btn.onclick = function () {
+          addSecondsToTimer(-10);
+        };
+        add30Btn.onclick = function () {
+          addSecondsToTimer(30);
+        };
+        sub30Btn.onclick = function () {
+          addSecondsToTimer(-30);
+        };
+
+        tabLogBtn.onclick = function () {
+          switchTab("log");
+        };
+        tabBgBtn.onclick = function () {
+          switchTab("bg");
+        };
+
+        var labelEl = document.querySelector(".label");
+        if (labelEl) {
+          labelEl.onclick = function () {
+            timerMode = timerMode === "remaining" ? "elapsed" : "remaining";
+            addLogEntry("⏲️ Timer mode switched to: " + timerMode);
+          };
+        }
+
+        addLogEntry("🎯 Full Feature Scheduler Ready");
+      }
+
+      init();
+      // ==================== POSTMESSAGE HANDLER ====================
+      window.addEventListener("message", function (event) {
+        if (event.data && event.data.type === "loadProgram") {
+          fullProgram = ensureScheduleExists(event.data.data);
+          buildScheduleList();
+          loadTaskByIndex(0);
+          addLogEntry("📥 New program loaded from parent");
+        }
+        if (event.data && event.data.type === "stop") {
+          AudioEngine.stopAll();
+          Scheduler.stop();
+          addLogEntry("stopped");
+          unlock();
+        }
+      });
+      document.addEventListener("click", function (e) {
+        if (e.target.tagName == "BUTTON") {
+          var bt = e.target;
+          if (bt.disabled != true) {
+            bt.disabled = true;
+            setTimeout(function () {
+              bt.disabled = false;
+            }, 500);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

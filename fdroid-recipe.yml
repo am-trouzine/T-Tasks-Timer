@@ -1,0 +1,23 @@
+Categories:
+  - Time
+  - Productivity
+License: Apache-2.0
+WebSite: https://am-trouzine.github.io/T-Tasks-Timer/
+SourceCode: https://github.com/am-trouzine/T-Tasks-Timer
+IssueTracker: https://github.com/am-trouzine/T-Tasks-Timer/issues
+
+Name: T-Tasks-Timer
+Summary: An HTML5 task runner and time-block scheduler
+Description: |-
+    A lightweight, responsive HTML5 task runner and sequence scheduler designed to automate your time-blocks. Optimized to run flawlessly across modern Android releases as well as legacy environments down to Android 4.4.2 (KitKat).
+
+RepoType: git
+Repo: https://github.com/am-trouzine/T-Tasks-Timer.git
+
+Builds:
+  - versionName: "1.0"
+    versionCode: 1
+    commit: v1.0.0
+    subdir: android
+    gradle:
+      - yes

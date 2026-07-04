@@ -1,0 +1,5 @@
+T-Tasks-Timer is a lightweight, responsive task runner and sequence scheduler designed to automate your time-blocks. 
+
+Built cleanly with optimized HTML5 web assets embedded natively into a legacy-compatible Android WebView container, this application features clear visual countdowns, sequential task progressions, and an adaptive user interface. 
+
+Optimized to run flawlessly across modern Android releases as well as legacy environments down to Android 4.4.2 (KitKat). Fully open-source and tracking-free.

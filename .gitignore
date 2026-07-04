@@ -1,0 +1,12 @@
+# Android/Gradle build outputs
+android/build/
+android/.gradle/
+android/app/build/
+
+# Local configuration files
+android/local.properties
+android/.idea/
+android/*.iml
+
+# Log files
+*.log

@@ -1,0 +1,4846 @@
+<!doctype html>
+<html lang="en" data-label="html">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="apple-touch-icon" href="favicon.png" />
+    <title data-label="title">Activity Editor</title>
+    <script src="trans.js"></script>
+    <style>
+      /* --- Core Reset & Sizing --- */
+      * {
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        height: 100%;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #d1d5db; /* Darker neutral background for the body wrapper */
+        color: #333333;
+        padding: 16px;
+        height: 100%;
+        background: #f0f2f5;
+      }
+      html,
+      body {
+        /* Prevents pull-to-refresh and glow effects at the top/bottom of the page */
+        overscroll-behavior-y: contain;
+        -ms-scroll-chaining: none; /* For older IE/Edge engines just in case */
+      }
+
+      /* --- Layout Container --- */
+      .menu {
+        width: 100%;
+        background: #1e293b;
+        color: #ffffff;
+      }
+      .footer-menu {
+        border-top: 1px solid #334155;
+        background: #0f172a;
+      }
+
+      .footer-text {
+        font-size: 15px;
+        color: #94a3b8;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      /* --- Tab Ribbon Navigation --- */
+      .tab-con {
+        background: #e2e8f0;
+        border-bottom: 2px solid #cbd5e1;
+        -webkit-overflow-scrolling: touch;
+        display: flex;
+        overflow: auto;
+      }
+
+      .tab-con > .tab-btn {
+        display: inline-block;
+        vertical-align: bottom;
+        padding: 12px 16px;
+        cursor: pointer;
+        border: none;
+        border-radius: 6px 6px 0 0;
+        margin-right: 2px;
+        font-size: 15px;
+        flex: 0 0 fit-content;
+        max-height: 40px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        background: #cbd5e1;
+        color: #475569;
+      }
+      .tab-con > .tab-btn.tab-active {
+        background: #2b4bff;
+        color: #ffffff;
+        font-weight: bold;
+      }
+      .tab-view {
+        display: none;
+        border: dotted thin orange; /* Retained your test frame indicator */
+      }
+      .tab-view.active-tab {
+        display: block;
+      }
+      .tab-content-inner {
+        padding: 5px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .new-task {
+        animation: fadeIn 1s ease-in-out forwards;
+      }
+      input {
+        direction: auto;
+      }
+    </style>
+    <script>
+      function clearTasksSchedule() {
+        var tbody = document.querySelector("#schedule tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        calcTotalDuration();
+      }
+      function allTasksSchedule() {
+        try {
+          var tasks = document.querySelectorAll(".activity");
+          for (var i = 0; i < tasks.length; i++) {
+            var taskId = tasks[i].getAttribute("data-id");
+            addEmptyScheduleSlot(taskId);
+          }
+          calcTotalDuration();
+        } catch (e) {
+          alert(e + "");
+        }
+      }
+      function addEmptyScheduleSlot(optionalTaskId) {
+        var tbody = document.querySelector("#schedule tbody");
+        if (!tbody) return;
+        var taskId = optionalTaskId || "";
+
+        var tr = document.createElement("tr");
+
+        // Cell 1: Task wrapper
+        var tdTask = document.createElement("td");
+        var wrapper = createTaskWrapper("", taskId, "");
+        wrapper
+          .querySelector("select")
+          .setAttribute("data-bind", "schedule.schedule.taskId");
+        tdTask.appendChild(wrapper);
+        tr.appendChild(tdTask);
+
+        // Cell 2: Repeat input
+        var tdRepeat = document.createElement("td");
+        var repeatInput = document.createElement("input");
+        repeatInput.setAttribute("type", "number");
+        repeatInput.setAttribute("min", "1");
+        repeatInput.setAttribute("max", "999");
+        repeatInput.setAttribute("value", "1");
+        repeatInput.setAttribute("data-bind", "schedule.schedule.repeat");
+        repeatInput.style.width = "70px";
+
+        tdRepeat.appendChild(repeatInput);
+        tdRepeat.innerHTML +=
+          '<button onclick="slotBefore(this)">before</button>' +
+          " " +
+          '<button onclick="slotAfter(this)">after</button>';
+        tr.appendChild(tdRepeat);
+
+        // Cell 3: Action buttons
+        var tdActions = document.createElement("td");
+        //tdActions.style.whiteSpace = 'nowrap';
+
+        var btnUp = document.createElement("button");
+        btnUp.setAttribute("class", "btnUp");
+        btnUp.innerHTML = "▲";
+        btnUp.style.margin = "0 1px";
+        btnUp.setAttribute("onclick", "moveScheduleRow(this, -1)");
+        tdActions.appendChild(btnUp);
+
+        var btnDown = document.createElement("button");
+        btnDown.setAttribute("class", "btnDown");
+        btnDown.innerHTML = "▼";
+        btnDown.style.margin = "0 1px";
+        btnDown.setAttribute("onclick", "moveScheduleRow(this, 1)");
+        tdActions.appendChild(btnDown);
+
+        var btnRemove = document.createElement("button");
+        btnRemove.innerHTML = "✖";
+        btnRemove.style.marginLeft = "0 1px";
+        btnRemove.style.color = "red";
+        btnRemove.setAttribute("onclick", "removeScheduleRow(this)");
+        tdActions.appendChild(btnRemove);
+
+        tr.appendChild(tdActions);
+        tbody.appendChild(tr);
+
+        updateScheduleIndices();
+        return tr;
+      }
+      function slotBefore(target) {
+        var e = target;
+        while (e && e.tagName.toLowerCase() !== "tr") e = e.parentElement;
+        if (e) {
+          undoMgr.record("schedule");
+          var tr = addEmptyScheduleSlot(null);
+          e.insertAdjacentElement("beforebegin", tr);
+          updateScheduleIndices();
+          flasher2(tr);
+          flashEl(tr);
+        }
+      }
+      function slotAfter(target) {
+        var e = target;
+        while (e && e.tagName.toLowerCase() !== "tr") e = e.parentElement;
+        if (e) {
+          undoMgr.record("schedule");
+          var tr = addEmptyScheduleSlot(null);
+          e.insertAdjacentElement("afterend", tr);
+          updateScheduleIndices();
+          flasher2(tr);
+          flashEl(tr);
+        }
+      }
+      function removeScheduleRow(btn) {
+        var tr = btn.parentNode;
+        while (tr && tr.tagName !== "TR") {
+          tr = tr.parentNode;
+        }
+        if (tr && tr.parentNode) {
+          undoMgr.record("schedule");
+          tr.parentNode.removeChild(tr);
+          calcTotalDuration();
+          updateScheduleIndices();
+        }
+      }
+      function moveScheduleRow(btn, direction) {
+        var tr = btn.parentElement;
+        while (tr && tr.tagName !== "TR") {
+          tr = tr.parentElement;
+        }
+        if (!tr) return;
+
+        if (direction === -1 && tr.previousElementSibling) {
+          undoMgr.record("schedule");
+          tr.previousElementSibling.insertAdjacentElement("beforebegin", tr);
+          updateScheduleIndices();
+          flasher2(tr);
+          flashEl(tr);
+        } else if (direction === 1 && tr.nextElementSibling) {
+          undoMgr.record("schedule");
+          tr.nextElementSibling.insertAdjacentElement("afterend", tr);
+          updateScheduleIndices();
+          flasher2(tr);
+          flashEl(tr);
+        }
+      }
+      function flasher2(tr) {
+        var e = document.querySelectorAll(".new-task");
+        for (var i = 0; i < e.length; i++) e[i].classList.remove("new-task");
+        tr.classList.add("new-task");
+        setTimeout(function () {
+          if (tr && tr.classList) tr.classList.remove("new-task");
+        }, 2000);
+      }
+      function updateScheduleIndices() {
+        var tbody = document.querySelector("#schedule tbody");
+        if (!tbody) return;
+
+        var rows = tbody.children;
+        for (var i = 0; i < rows.length; i++) {
+          var newPos = i + 1;
+          var db = rows[i].querySelectorAll("[data-bind]");
+          for (var j = 0; j < db.length; j++) {
+            var k = db[j].getAttribute("data-bind");
+            k = k.split(".");
+            k[1] = newPos;
+            db[j].setAttribute("data-bind", k.join(".")); //newPos+'.'+k)
+          }
+          // Update wrapper label
+          var wrapper = rows[i].querySelector(".wrapper-task");
+          if (wrapper) {
+            var label = wrapper.querySelector(".wrapper-label [data-pos]");
+            if (label) {
+              label.innerText = /* '🎯 Task ' +*/ newPos;
+            }
+          }
+        }
+      }
+      var globalMediaItems = []; // store {id, name, size, src, type}
+      function activitiesContainer() {
+        return document.querySelector("#tasks .tab-content-inner");
+      }
+      function mediaContainer() {
+        return document.querySelector("#media");
+      }
+      function escapeHtml(str) {
+        return String(str).replace(/[&<>]/g, function (m) {
+          if (m === "&") return "&amp;";
+          if (m === "<") return "&lt;";
+          if (m === ">") return "&gt;";
+          return m;
+        });
+      }
+      var nextActivityId = 100;
+      function assignActivityId(activityDiv) {
+        if (!activityDiv.hasAttribute("data-activity-id")) {
+          activityDiv.setAttribute(
+            "data-activity-id",
+            "act_" + nextActivityId++,
+          );
+        }
+        return activityDiv.getAttribute("data-activity-id");
+      }
+      function updatePositions() {
+        var children = activitiesContainer().querySelectorAll(".activity");
+        for (var i = 0; i < children.length; i++) {
+          var posSpan = children[i].querySelector(".pos");
+          if (posSpan) posSpan.innerText = i + 1;
+        }
+      }
+      function getActivityFromChild(el) {
+        while (el && (!el.classList || !el.classList.contains("activity"))) {
+          el = el.parentNode;
+          if (!el || el === document.body) return null;
+        }
+        return el;
+      }
+      function formatBytes(bytes) {
+        try {
+          bytes = parseFloat(bytes);
+          if (isNaN(bytes) || bytes <= 0) {
+            return "0 B";
+          }
+          var k = 1024;
+          var sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
+          var i = Math.floor(Math.log(bytes) / Math.log(k));
+          if (i >= sizes.length) {
+            i = sizes.length - 1;
+          }
+          var value = bytes / Math.pow(k, i);
+          return (
+            value.toFixed(2).replace(/\.00$/, "") +
+            String.fromCharCode(160) +
+            sizes[i]
+          );
+        } catch (e) {
+          alert(e + "");
+        }
+      }
+      function isDuplicateMedia(srcBase64, size) {
+        var q = document.querySelectorAll('[data-size="' + size + '"]');
+        for (var i = 0; i < q.length; i++) {
+          if (q[i].src === srcBase64) return q[i].parentElement.dataset.mediaId; //|| true;
+        }
+        return false;
+      }
+      function addMediaItemToLibrary(id, name, size, src, type) {
+        try {
+          globalMediaItems.push({
+            id: id,
+            name: name,
+            size: size,
+            /*src: src,*/ type: type,
+          });
+          refreshAllMediaSelectors();
+        } catch (e) {
+          alert("addMediaItemToLibrary:\n" + e);
+        }
+      }
+      function removeMediaItemFromLibrary(id) {
+        for (var i = 0; i < globalMediaItems.length; i++) {
+          if (globalMediaItems[i].id === id) {
+            globalMediaItems.splice(i, 1);
+            break;
+          }
+        }
+        refreshAllMediaSelectors();
+      }
+      function calcTotalDuration() {
+        try {
+          var tasksCount = 0,
+            schedCount = 0;
+          var tasksDur = 0,
+            schedDur = 0;
+          var tasks = getTaskData(document.querySelector("#tasks"));
+          var td = {};
+          if ("tasks" in tasks) {
+            for (var i in tasks.tasks) {
+              td[i] = {};
+              for (var k in tasks.tasks[i].duration)
+                td[i][k] = tasks.tasks[i].duration[k];
+              tasksCount++;
+              var d =
+                sanitizeInt(td[i].hours) * 3600 +
+                sanitizeInt(td[i].minutes) * 60 +
+                sanitizeInt(td[i].seconds) * 1;
+              td[i]["ss"] = d;
+              tasksDur += d;
+            }
+          }
+          var sched = getTaskData(document.querySelector("#schedule"));
+          var s = {};
+          if ("schedule" in sched) {
+            for (var i in sched.schedule) {
+              if (td[sched.schedule[i].taskId]) {
+                var r = parseInt(sched.schedule[i].repeat, 10) || 0;
+                s[sched.schedule[i].taskId] = s[sched.schedule[i].taskId]
+                  ? s[sched.schedule[i].taskId] + r
+                  : r;
+                schedCount += r;
+                schedDur += td[sched.schedule[i].taskId].ss * r;
+              }
+            }
+          }
+          document.querySelector(
+            '[data-name="total-dur-task-count"]',
+          ).textContent = tasksCount;
+          document.querySelector(
+            '[data-name="total-dur-task-dur"]',
+          ).textContent = secsDisp(tasksDur);
+          document.querySelector(
+            '[data-name="total-dur-sched-count"]',
+          ).textContent = schedCount;
+          document.querySelector(
+            '[data-name="total-dur-sched-dur"]',
+          ).textContent = secsDisp(schedDur);
+        } catch (e) {
+          alert("calcTotalDuration:\n" + e);
+        }
+      }
+      function secsDisp(total) {
+        var hh = Math.floor(total / 3600);
+        var mm = Math.floor((total % 3600) / 60);
+        var ss = total % 60;
+        var hStr = hh < 10 ? "0" + hh : "" + hh;
+        var mStr = mm < 10 ? "0" + mm : "" + mm;
+        var sStr = ss < 10 ? "0" + ss : "" + ss;
+        return hStr + ":" + mStr + ":" + sStr;
+      }
+      function refreshAllMediaSelectors() {
+        try {
+          var selectors = document.querySelectorAll(
+            ".media-select-img, .media-select-snd",
+          );
+          for (var i = 0; i < selectors.length; i++) {
+            var sel = selectors[i];
+            var currentVal = sel.value;
+
+            if (sel.classList.contains("media-select-img")) {
+              sel.innerHTML = getImageSelectOptions(currentVal); //= '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.label) + '</option>';
+            } else if (sel.classList.contains("media-select-snd")) {
+              sel.innerHTML = getSoundSelectOptions(currentVal); //options += '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.label) + '</option>';
+            }
+            sel.onchange();
+          }
+          var imgCount = 0,
+            audioCount = 0,
+            imgSize = 0,
+            audioSize = 0;
+          for (var i = 0; i < globalMediaItems.length; i++) {
+            var item = globalMediaItems[i];
+            if (item.type == "audio") {
+              audioCount++;
+              audioSize += item.size * 1;
+            } else if (item.type == "image") {
+              imgCount++;
+              imgSize += item.size * 1;
+            }
+          }
+          document.querySelector(
+            '[data-name="total-size-img-count"]',
+          ).textContent = imgCount;
+          document.querySelector('[data-name="total-size-img"]').textContent =
+            formatBytes(imgSize);
+          document.querySelector(
+            '[data-name="total-size-audio-count"]',
+          ).textContent = audioCount;
+          document.querySelector('[data-name="total-size-audio"]').textContent =
+            formatBytes(audioSize);
+          document.querySelector(
+            '[data-name="total-size-media-count"]',
+          ).textContent = imgCount + audioCount;
+          document.querySelector('[data-name="total-size-media"]').textContent =
+            formatBytes(imgSize + audioSize);
+        } catch (e) {
+          alert(e + "");
+        }
+      }
+      function createMediaElement(type, src, name, size, id) {
+        var wrapper = document.createElement("div");
+        wrapper.innerHTML =
+          '<input type="hidden" value="' +
+          name +
+          '" data-bind="media.' +
+          id +
+          '.name"><input type="hidden" value="' +
+          size +
+          '" data-bind="media.' +
+          id +
+          '.size"><input type="hidden" value="' +
+          type +
+          '" data-bind="media.' +
+          id +
+          '.type">';
+        wrapper.className = "media-item";
+        wrapper.setAttribute("data-media-id", id);
+        wrapper.setAttribute("data-media-type", type);
+        if (type === "image") {
+          var img = document.createElement("img");
+          img.src = src;
+          img.setAttribute("data-bind", "media." + id + ".src");
+          img.setAttribute("data-size", size);
+
+          wrapper.appendChild(img);
+        } else {
+          var audio = document.createElement("audio");
+          audio.src = src;
+          audio.setAttribute("data-bind", "media." + id + ".src");
+          audio.setAttribute("data-size", size);
+          audio.controls = true;
+          wrapper.appendChild(audio);
+        }
+        var label = document.createElement("div");
+        label.style.fontSize = "10px";
+        label.innerHTML = name + " (" + formatBytes(size) + ")";
+        wrapper.appendChild(label);
+        return wrapper;
+      }
+
+      // Global placeholder for callback routines
+      var loading = null;
+
+      window.onAndroidMetadataPicked = function (fileName, fileSize) {
+        if (loading) {
+          // 500KB slices are stable and fast across the bridge
+          var CHUNK_SIZE = 500 * 1024;
+          var totalChunks = Android.getFileChunkCount(CHUNK_SIZE);
+          var collectedChunks = [];
+
+          // Loop and pull down each text slice
+          for (var i = 0; i < totalChunks; i++) {
+            collectedChunks.push(Android.getFileChunk(i, CHUNK_SIZE));
+          }
+
+          // Combine all slices into the complete string payload
+          var fullDataUrlOrText = collectedChunks.join("");
+
+          // Wipe Java memory instantly
+          Android.clearNativeFileCache();
+
+          // Pass it straight to your app engine handler!
+          loading(fullDataUrlOrText, fileName, fileSize);
+          loading = null;
+        }
+      };
+
+      /**
+       * Helper: Safely converts a base64 segment back to a clean UTF-8 Text string
+       * fully compatible across older Android web engines
+       */
+      function decodeBase64ToText(rawBase64) {
+        var binaryString = window.atob(rawBase64);
+        var bytes = new Uint8Array(binaryString.length);
+        for (var i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Using decodeURIComponent + escape handles complex Arabic characters accurately
+        return decodeURIComponent(
+          escape(String.fromCharCode.apply(null, bytes)),
+        );
+      }
+
+      /**
+       * 2. Shared Data Application Processors
+       */
+      function applyParsedDataToApp(parsedData) {
+        undoMgr.record("app");
+        emptyTaskData("media");
+        emptyTaskData("tasks");
+        emptyTaskData("schedule");
+        rebuildTaskData(parsedData, "media");
+        rebuildTaskData(parsedData, "tasks");
+        rebuildTaskData(parsedData, "schedule");
+        setTaskData(
+          document.querySelector(".app-container:not(.hide)"),
+          parsedData,
+        );
+      }
+
+      function handleParsedJsonData(data) {
+        try {
+          if (data) {
+            applyParsedDataToApp(JSON.parse(data));
+          }
+        } catch (e) {
+          alert("LoadJSON Error:\n" + e);
+        }
+      }
+
+      function handleParsedHtmlData(data) {
+        try {
+          if (!data) return;
+          /*var parser = new DOMParser();
+        var xmlDoc = parser.parseFromString(data, "text/html");
+        var fullProgramElement = xmlDoc.querySelector('script[data-id="fullProgram"]');
+        */
+          var lt = String.fromCharCode(60),
+            gt = String.fromCharCode(62);
+          var startTag = ' data-id="fullProgram"';
+          var startIdx = data.indexOf(startTag);
+          if (startIdx === -1) throw new Error("fullProgram script not found");
+          startIdx = data.indexOf(gt, startIdx);
+          if (startIdx === -1) throw new Error("Malformed script tag");
+          startIdx += 1;
+          var endIdx = data.indexOf(lt + "/script", startIdx);
+          if (endIdx === -1) throw new Error("Missing script");
+          var scriptContent = data.substring(startIdx, endIdx).trim();
+
+          //var scriptContent = fullProgramElement.textContent;
+          var start = scriptContent.indexOf("{");
+          var end = scriptContent.lastIndexOf("}");
+
+          if (start === -1 || end === -1) {
+            throw new Error("Invalid object format inside fullProgram layout.");
+          }
+
+          var cleanJsonText = scriptContent.substring(start, end + 1);
+          applyParsedDataToApp(JSON.parse(cleanJsonText));
+        } catch (e) {
+          alert("LoadHTML Error:\n" + e);
+        }
+      }
+
+      /**
+       * 3. Unified Media Processing Routing (Images & Audio)
+       */
+      function processInsertedMedia(type, base64DataUrl, name, size) {
+        var id = generateId(type);
+        var dup = isDuplicateMedia(base64DataUrl, size);
+        if (dup) {
+          alert("Duplicate detected: This " + type + " asset already exists.");
+          return dup;
+        }
+        undoMgr.record("media");
+        var mediaDiv = createMediaElement(type, base64DataUrl, name, size, id);
+        mediaContainer().appendChild(mediaDiv);
+        addMediaItemToLibrary(id, name, size, base64DataUrl, type);
+        return id;
+      }
+
+      /**
+       * 4. User Interaction Methods called by UI Buttons
+       */
+      var preset_hiit = {
+        main: {
+          title: "My HICT",
+          defaultLang: "en-US",
+          logUtterances: true,
+          announceCompleted: true,
+        },
+        tasks: {
+          t_44269: {
+            name: "Jumping",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_50711: {
+            name: "Jumping jacks",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_82439: {
+            name: "Wall sit",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_1276: {
+            name: "Pushups",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            actions: {
+              action_1782843168613_30646: {
+                type: "count",
+                timingSeconds: "100",
+                payload: { start: "1", end: "10", step: "1", interval: "2" },
+              },
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_76985: {
+            name: "Crunches",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            actions: {
+              action_1782843340070_35698: {
+                type: "count",
+                timingSeconds: "100",
+                payload: { start: "1", end: "10", step: "1", interval: "2" },
+              },
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_84213: {
+            name: "Step-ups",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_5084: {
+            name: "Squats",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_23315: {
+            name: "Triceps dips",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_12233: {
+            name: "Plank",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_80050: {
+            name: "High knees",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_51232: {
+            name: "Mountain climbers",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            elapsed: {
+              enabled: true,
+              fromStart: "20",
+              toEnd: "80",
+              everySeconds: "20",
+            },
+            left: {
+              enabled: true,
+              fromStart: "60",
+              toEnd: "20",
+              everySeconds: "20",
+            },
+            end: {
+              playTicks: true,
+              tickCount: "2",
+              beep: true,
+              announceCompleted: true,
+            },
+          },
+          t_76610: {
+            name: "Rest",
+            duration: { minutes: "2" },
+            options: { announceStarted: true, announceTotalDuration: true },
+            actions: {
+              a_33706: {
+                type: "pre_msg",
+                timingSeconds: "60",
+                payload: { value: "next" },
+              },
+              a_28436: {
+                type: "pre_msg",
+                timingSeconds: "90",
+                payload: { value: "left" },
+              },
+            },
+            end: { playTicks: true, tickCount: "4", beep: true },
+          },
+        },
+        schedule: {
+          1: { taskId: "t_44269", repeat: "1" },
+          2: { taskId: "t_76610", repeat: "1" },
+          3: { taskId: "t_50711", repeat: "1" },
+          4: { taskId: "t_76610", repeat: "1" },
+          5: { taskId: "t_82439", repeat: "1" },
+          6: { taskId: "t_76610", repeat: "1" },
+          7: { taskId: "t_1276", repeat: "1" },
+          8: { taskId: "t_76610", repeat: "1" },
+          9: { taskId: "t_76985", repeat: "1" },
+          10: { taskId: "t_76610", repeat: "1" },
+          11: { taskId: "t_84213", repeat: "1" },
+          12: { taskId: "t_76610", repeat: "1" },
+          13: { taskId: "t_5084", repeat: "1" },
+          14: { taskId: "t_76610", repeat: "1" },
+          15: { taskId: "t_23315", repeat: "1" },
+          16: { taskId: "t_76610", repeat: "1" },
+          17: { taskId: "t_12233", repeat: "1" },
+          18: { taskId: "t_76610", repeat: "1" },
+          19: { taskId: "t_80050", repeat: "1" },
+          20: { taskId: "t_76610", repeat: "1" },
+          21: { taskId: "t_51232", repeat: "1" },
+          22: { taskId: "t_76610", repeat: "1" },
+        },
+      };
+      function load(type) {
+        if (type == "example-exam") {
+          return ;//return applyParsedDataToApp(preset_exam);
+        }
+        if (type == "example-hiit") {
+          return applyParsedDataToApp(preset_hiit);
+        }
+
+        if (typeof Android !== "undefined" && Android.triggerFallbackPicker) {
+          loading =
+            type === "HTML" ? handleParsedHtmlData : handleParsedJsonData;
+          Android.triggerFallbackPicker(
+            type === "HTML" ? "text/html" : "application/json",
+          );
+          return;
+        }
+
+        // Web Browser Fallback
+        loadFromFile(
+          type.toLowerCase(),
+          type === "HTML" ? handleParsedHtmlData : handleParsedJsonData,
+        );
+      }
+
+      function addImageWithBase64(fn) {
+        var handleImg = function (base64, name, size) {
+          var id = processInsertedMedia("image", base64, name, size);
+          if (fn && "function" == typeof fn) fn(id);
+        };
+
+        if (typeof Android !== "undefined" && Android.triggerFallbackPicker) {
+          loading = handleImg;
+          Android.triggerFallbackPicker("image/*");
+          return;
+        }
+
+        // Web Browser Fallback
+        triggerWebFileInput("image/*", handleImg);
+      }
+
+      function addSoundWithBase64(fn) {
+        var handleAudio = function (base64, name, size) {
+          var id = processInsertedMedia("audio", base64, name, size);
+          if (fn && "function" == typeof fn) fn(id);
+        };
+
+        if (typeof Android !== "undefined" && Android.triggerFallbackPicker) {
+          loading = handleAudio;
+          Android.triggerFallbackPicker("audio/*");
+          return;
+        }
+
+        // Web Browser Fallback
+        triggerWebFileInput("audio/*", handleAudio);
+      }
+
+      /**
+       * Helper: Simulates file selection inside standard browser fallback mode
+       */
+      function triggerWebFileInput(acceptType, callback) {
+        var fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = acceptType;
+        fileInput.onchange = function (e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function (ev) {
+            callback(ev.target.result, file.name, file.size);
+          };
+          reader.readAsDataURL(file);
+        };
+        fileInput.click();
+      }
+
+      function removeSelectedMedia() {
+        var selected = document.querySelector(".mediaMenu");
+        if (selected) {
+          var mediaId = selected.getAttribute("data-media-id");
+          var parent = selected.parentNode;
+          if (parent) {
+            undoMgr.record("media");
+            parent.removeChild(selected);
+            removeMediaItemFromLibrary(mediaId);
+          }
+        }
+        document.getElementById("btnRM").setAttribute("disabled", "true");
+      }
+      function fn1(e) {
+        var t = e && e.value ? e.value : "_";
+        while (e && !e.classList.contains("activity")) e = e.parentElement;
+        if (e) e.querySelector(".name").innerText = t;
+      }
+      // Activity creation
+      function generateId(prefix) {
+        if (prefix == null) {
+          prefix = "id";
+        }
+        return (
+          prefix +
+          "_" +
+          new Date().getTime() +
+          "_" +
+          Math.floor(Math.random() * 100000)
+        );
+      }
+      function createActivityElement(posValue, nameVal, timeVal, gid) {
+        if (posValue == null) posValue = 0;
+        if (nameVal == null) nameVal = "Activity";
+        if (timeVal == null) timeVal = "30";
+        var _id = gid || generateId("task");
+        var d = document.createElement("div");
+        d.className = "activity";
+        d.setAttribute("data-id", _id);
+        var html = "";
+        html += '<div class="activity-main">';
+        html +=
+          '  <div class="activity-fields d-table task-head" style="table-layout: fixed;">';
+        html += '    <div class="cell-badges d-cell">';
+        html +=
+          '<span class="pos" data-bind="tasks.' +
+          _id +
+          '.position">' +
+          posValue +
+          "</span>";
+        html += "    </div>";
+        html += '    <div class="cell-name d-cell">';
+        html +=
+          '      <strong class="name">' + escapeHtml(nameVal) + "</strong>";
+        html += "    </div>";
+
+        html += '    <div class="cell-action d-cell">';
+        html +=
+          '      <button type="button" class="btn-test" title="Test Task" data-label="test-task">▶</button>';
+        html += "    </div>";
+        html += "  </div>";
+        html += '<hr class="activity-divider"><div class="activity-contents">';
+
+        var tWrapper = document.createElement("div");
+        tWrapper.innerHTML =
+          '  <div class="wrapper-label">⏱️ <span data-label="duration">' +
+          (getLabel("duration").textContent || "Duration") +
+          "</span></div>" +
+          '  <div style="display:inline-block">' +
+          '    <label data-label="hours">' +
+          (getLabel("hours").textContent || "HH") +
+          "</label>" +
+          '    <input dir="auto" class="time-input" data-bind="tasks.' +
+          _id +
+          '.duration.hours" maxlength="1">' +
+          "  </div>" +
+          '  <div style="display:inline-block">' +
+          '    <label data-label="minutes">' +
+          (getLabel("minutes").textContent || "MM") +
+          "</label>" +
+          '    <input dir="auto" class="time-input" data-bind="tasks.' +
+          _id +
+          '.duration.minutes" maxlength="3">' +
+          "  </div>" +
+          '  <div style="display:inline-block">' +
+          '    <label data-label="seconds">' +
+          (getLabel("seconds").textContent || "SS") +
+          "</label>" +
+          '    <input dir="auto" class="time-input" data-bind="tasks.' +
+          _id +
+          '.duration.seconds" maxlength="3" value="' +
+          escapeHtml(timeVal) +
+          '">' +
+          "  </div>" +
+          '  <span class="total-value">00:00:00</span>';
+        tWrapper.setAttribute("class", "card wrapper");
+        onInputChange(tWrapper.querySelector("input"));
+
+        html +=
+          '<div class="card wrapper"><div class="wrapper-label">📋 <span data-label="task-name">' +
+          (getLabel("task-name").textContent || "Task Name") +
+          "</span>:</div>" +
+          '<input dir="auto" data-bind="tasks.' +
+          _id +
+          '.name" value="' +
+          escapeHtml(nameVal) +
+          '" onchange="updateAllScheduleSelects();fn1(this)" oninput="fn1(this)">' +
+          "</div>" +
+          tWrapper.outerHTML;
+
+        var iW = createImageWrapper(
+          "",
+          "",
+          getLabel("background-image").textContent || "Background Image",
+        );
+        iW.querySelector(".wrapper-label span").setAttribute(
+          "data-label",
+          "background-image",
+        );
+        iW.querySelector("select").setAttribute(
+          "data-bind",
+          "tasks." + _id + ".background.imageId",
+        );
+        var sW = createSoundWrapper(
+          "",
+          "",
+          getLabel("background-sound").textContent || "Background Sound",
+        );
+        sW.querySelector(".wrapper-label span").setAttribute(
+          "data-label",
+          "background-sound",
+        );
+        sW.querySelector("select").setAttribute(
+          "data-bind",
+          "tasks." + _id + ".background.soundId",
+        );
+        html += iW.outerHTML;
+        html += sW.outerHTML;
+
+        html += '<div class="activity-options"">'; // style="max-height: 260px; overflow-y: auto;margin-right:5mm">';
+        //html+='<button style="width:100%;" onclick="var e=this.parentElement;e.hasAttribute(\'style\')?e.removeAttribute(\'style\'):e.setAttribute(\'style\',\'max-height:180px;overflow-y:auto;border:solid thin ;border-radius:5px;margin-right:5mm;\')">📌</button>'
+        html +=
+          '<label class="check-label"><input type="checkbox" checked data-bind="tasks.' +
+          _id +
+          '.options.announceStarted"> <span data-label="announce-started">' +
+          (getLabel("announce-started").textContent ||
+            'Announce "Task started"') +
+          "</span></label>";
+        html +=
+          '<label class="check-label"><input type="checkbox" checked data-bind="tasks.' +
+          _id +
+          '.options.announceTotalDuration"> <span data-label="announce-duration">' +
+          (getLabel("announce-duration").textContent || "Announce duration") +
+          "</span></label>";
+
+        html +=
+          '<span class="check-label"><label><input type="checkbox" onchange="checkLabelChange(this)" data-bind="tasks.' +
+          _id +
+          '.elapsed.enabled"> <span data-label="announce-elapsed">' +
+          (getLabel("announce-elapsed").textContent ||
+            'Announce \"elapsed duration\"') +
+          '</span></label> <span data-label="between">' +
+          (getLabel("between").textContent || "between") +
+          '</span> (<span data-label="start">' +
+          (getLabel("start").textContent || "start") +
+          '</span>+<input dir="auto" class="inp-xs input-sec" data-bind="tasks.' +
+          _id +
+          '.elapsed.fromStart" min="0" value="0"><span data-label="sec">' +
+          (getLabel("sec").textContent || "s") +
+          '</span>) <span data-label="and">' +
+          (getLabel("and").textContent || " and ") +
+          '</span> (<span data-label="end">' +
+          (getLabel("end").textContent || "end") +
+          '</span>-<input dir="auto" class="inp-xs input-sec" data-bind="tasks.' +
+          _id +
+          '.elapsed.toEnd" max="10" value="0"><span data-label="sec">' +
+          (getLabel("sec").textContent || "s") +
+          '</span>) <span data-label="every">' +
+          (getLabel("every").textContent || " every ") +
+          '</span><input dir="auto" class="inp-xs input-sec" min="1" value="10" data-bind="tasks.' +
+          _id +
+          '.elapsed.everySeconds"><span data-label="sec">' +
+          (getLabel("sec").textContent || "s") +
+          "</span></span>";
+        html +=
+          '<span class="check-label"><label><input type="checkbox" onchange="checkLabelChange(this)" data-bind="tasks.' +
+          _id +
+          '.left.enabled"> <span data-label="announce-remaining">' +
+          (getLabel("announce-remaining").textContent ||
+            'Announce \"remaining duration\"') +
+          '</span></label> <span data-label="between">' +
+          (getLabel("between").textContent || "between") +
+          '</span> (<span data-label="start">' +
+          (getLabel("start").textContent || "start") +
+          '</span>+<input dir="auto" class="inp-xs input-sec" data-bind="tasks.' +
+          _id +
+          '.left.fromStart" min="0" value="0"><span data-label="sec">' +
+          (getLabel("sec").textContent || "s") +
+          '</span>) <span data-label="and">' +
+          (getLabel("and").textContent || " and ") +
+          '</span> (<span data-label="end">' +
+          (getLabel("end").textContent || "end") +
+          '</span>-<input dir="auto" class="inp-xs input-sec" data-bind="tasks.' +
+          _id +
+          '.left.toEnd" max="10" value="0"><span data-label="sec">' +
+          (getLabel("sec").textContent || "s") +
+          '</span>) <span data-label="every">' +
+          (getLabel("every").textContent || " every ") +
+          '</span><input dir="auto" class="inp-xs input-sec" min="1" value="10" data-bind="tasks.' +
+          _id +
+          '.left.everySeconds"><span data-label="sec">' +
+          (getLabel("sec").textContent || "s") +
+          "</span></span>";
+        html +=
+          '<div class="theActions"> <span data-label="add-action">' +
+          (getLabel("add-action").textContent || "Add Action") +
+          "</span>:";
+        html +=
+          '  <div><button onclick="addAction(this, \'snd\')"><span data-label="action-sound">' +
+          (getLabel("action-sound").textContent || "Sound") +
+          '</span></button> <button onclick="addAction(this, \'msg\')"><span data-label="action-message">' +
+          (getLabel("action-message").textContent || "Message") +
+          '</span></button> <button onclick="addAction(this, \'pre_msg\')"><span data-label="action-predefined">' +
+          (getLabel("action-predefined").textContent || "Predefined") +
+          '</span></button> <button onclick="addAction(this, \'count\')"><span data-label="action-count">' +
+          (getLabel("action-count").textContent || "Count") +
+          "</span></button></div>";
+        html += "  <div>"; // style="max-height:180px;overflow-y:auto;border:solid thin ;border-radius:5px;margin-right:5mm;"><button onclick="var e=this.parentElement;e.hasAttribute(\'style\')?e.removeAttribute(\'style\'):e.setAttribute(\'style\',\'max-height:180px;overflow-y:auto;border:solid thin ;border-radius:5px;margin-right:5mm;\')" style="width:100%">📌</button>
+        html +=
+          '<table border="1" style="width:100%; border-collapse:collapse;">';
+        html += "    <thead>";
+        html +=
+          '      <tr><th><span data-label="seconds-type">' +
+          (getLabel("seconds-type").textContent || "Seconds / Action Type") +
+          "</span></th></tr>";
+        html += "    </thead>";
+        html += "    <tbody></tbody>";
+        html += "  </table></div><div>";
+        html += "</div>";
+        html +=
+          '<div><span data-label="on-completion">' +
+          (getLabel("on-completion").textContent || "On completion") +
+          '</span>: <span class="check-label"><label><input type="checkbox" onchange="checkLabelChange(this)" data-bind="tasks.' +
+          _id +
+          '.end.playTicks"> <span data-label="play">' +
+          (getLabel("play").textContent || "Play") +
+          '</span></label> <input dir="auto" class="inp-xs" value="1" data-bind="tasks.' +
+          _id +
+          '.end.tickCount"> <span data-label="ticks">' +
+          (getLabel("ticks").textContent || "ticks") +
+          "</span></span>";
+        html +=
+          '<label class="check-label"><input type="checkbox" data-bind="tasks.' +
+          _id +
+          '.end.beep"> <span data-label="beep">' +
+          (getLabel("beep").textContent || "Beep") +
+          "</span></label>";
+        html +=
+          '<label class="check-label"><input type="checkbox" data-bind="tasks.' +
+          _id +
+          '.end.announceCompleted"> <span data-label="announce-completed">' +
+          (getLabel("announce-completed").textContent || "Announce completed") +
+          "</span></label></div>";
+        html += "</div></div>";
+        html +=
+          '</div><hr class="activity-divider"><div class="activity-footer">';
+        html +=
+          '<div class="activity-buttons">' +
+          '    <button class="tbtn tbtn-up up-btn">' +
+          "        ↑" +
+          '        <span class="tbtn-label" data-label="up">' +
+          (getLabel("up").textContent || "Up") +
+          "</span>" +
+          "    </button>" +
+          '    <button class="tbtn tbtn-down down-btn">' +
+          "        ↓" +
+          '        <span class="tbtn-label" data-label="down">' +
+          (getLabel("down").textContent || "Down") +
+          "</span>" +
+          "    </button>" +
+          '    <button class="tbtn tbtn-copy duplicate-btn">' +
+          "        ❐" +
+          '        <span class="tbtn-label" data-label="duplicate">' +
+          (getLabel("duplicate").textContent || "Duplicate") +
+          "</span>" +
+          "    </button>" +
+          '    <button class="tbtn tbtn-remove remove-btn">' +
+          "        ✕" +
+          '        <span class="tbtn-label" data-label="remove">' +
+          (getLabel("remove").textContent || "Remove") +
+          "</span>" +
+          "    </button>" +
+          "</div></div>";
+        d.innerHTML = html;
+
+        d.querySelector(".up-btn").onclick = function (e) {
+          e.stopPropagation();
+          mvUp(d);
+        };
+        d.querySelector(".down-btn").onclick = function (e) {
+          e.stopPropagation();
+          mvDown(d);
+        };
+        d.querySelector(".duplicate-btn").onclick = function (e) {
+          e.stopPropagation();
+          duplicateActivity(d);
+        };
+        d.querySelector(".remove-btn").onclick = function (e) {
+          e.stopPropagation();
+          removeActivityHandler(d);
+        };
+
+        var ic = d.querySelectorAll("[onchange]");
+        for (var c = 0; c < ic.length; c++) triggerEvent(ic[c], "change");
+        return d;
+      }
+      function checkLabelChange(e) {
+        try {
+          var inp = e,
+            p = e.parentElement;
+          while (p && !p.classList.contains("check-label")) p = p.parentElement;
+          if (!p) return;
+          var q = p.querySelectorAll("input");
+          for (var i = 0; i < q.length; i++) q[i].disabled = !inp.checked;
+          inp.disabled = false;
+        } catch (e) {
+          alert(e + "_checkLabelChange");
+        }
+      }
+      window.removeActionRow = function (btn) {
+        while (btn && btn.tagName.toLowerCase() != "tr")
+          btn = btn.parentElement;
+        if (btn) {
+          var task = btn.parentElement;
+          while (task && !task.classList.contains("activity"))
+            task = task.parentElement;
+          if (!task) return;
+          var obj = getTaskData(task.querySelector("tbody")); //theActions
+          if (!obj.tasks) {
+            obj["tasks"] = {};
+            obj["tasks"][task.dataset.id] = {};
+            obj["tasks"][task.dataset.id].actions = {};
+          }
+          undoMgr.record(["tasks", task.dataset.id, "actions"].join("."));
+          btn.parentElement.removeChild(btn);
+        }
+      };
+      function mvRow(btn, d) {
+        while (btn && btn.tagName.toLowerCase() != "tr")
+          btn = btn.parentElement;
+        if (btn) {
+          var task = btn.parentElement;
+          while (task && !task.classList.contains("activity"))
+            task = task.parentElement;
+          if (!task) return;
+          var obj = getTaskData(task.querySelector("tbody")); //theActions
+          if (!obj.tasks) {
+            obj["tasks"] = {};
+            obj["tasks"][task.dataset.id] = {};
+            obj["tasks"][task.dataset.id].actions = {};
+          }
+
+          if (d == "u" && btn.previousElementSibling) {
+            undoMgr.record(["tasks", task.dataset.id, "actions"].join("."));
+            btn.previousElementSibling.insertAdjacentElement(
+              "beforebegin",
+              btn,
+            );
+          }
+          if (d == "d" && btn.nextElementSibling) {
+            undoMgr.record(["tasks", task.dataset.id, "actions"].join("."));
+            btn.nextElementSibling.insertAdjacentElement("afterend", btn);
+          }
+        }
+      }
+      function addAction(btn, _type, existingId) {
+        try {
+          if (!btn || !btn.parentElement) {
+            return;
+          }
+          var task = btn.parentElement;
+          while (task && !task.classList.contains("activity"))
+            task = task.parentElement;
+          if (!task) return;
+          var obj = getTaskData(task.querySelector("tbody")); //theActions
+          if (!obj.tasks) {
+            obj["tasks"] = {};
+            obj["tasks"][task.dataset.id] = {};
+            obj["tasks"][task.dataset.id].actions = {};
+          }
+          undoMgr.record(["tasks", task.dataset.id, "actions"].join("."));
+          addActionRow(btn, _type, existingId);
+        } catch (e) {
+          alert("addAction:\n" + e);
+        }
+      }
+      window.addActionRow = function (btn, _type, existingId) {
+        try {
+          if (!btn || !btn.parentElement) {
+            return;
+          }
+          var task = btn.parentElement;
+          while (task && !task.classList.contains("activity"))
+            task = task.parentElement;
+          if (!task) return;
+          task = task.getAttribute("data-id");
+          if (["msg", "pre_msg", "snd", "count"].indexOf(_type) == -1) {
+            return;
+          }
+          var container = btn.parentElement.parentElement;
+          var table = container.querySelector("table");
+          if (!table) {
+            return;
+          }
+          var tbody = table.querySelector("tbody");
+          var tr = document.createElement("tr");
+          var _id = existingId || generateId("action");
+          tr.setAttribute("data-id", _id);
+          var tdVal = document.createElement("td");
+
+          var contentHtml = "";
+          if (_type == "msg") {
+            var msgW = createMessageWrapper(
+              "",
+              "",
+              "",
+              getLabel("message").textContent,
+            );
+            msgW
+              .querySelector(".wrapper-label span")
+              .setAttribute("data-label", "message");
+            msgW
+              .querySelector("input")
+              .setAttribute(
+                "data-bind",
+                "tasks." + task + ".actions." + _id + ".payload.text",
+              );
+            msgW
+              .querySelector("select")
+              .setAttribute(
+                "data-bind",
+                "tasks." + task + ".actions." + _id + ".payload.lang",
+              );
+            contentHtml = msgW.outerHTML;
+          } else if (_type == "pre_msg") {
+            var preW = createPreWrapper("Action");
+            preW
+              .querySelector("select")
+              .setAttribute(
+                "data-bind",
+                "tasks." + task + ".actions." + _id + ".payload.value",
+              );
+            contentHtml = preW.outerHTML;
+          } else if (_type == "snd") {
+            var sndW = createSoundWrapper(
+              "",
+              "",
+              getLabel("sound-id").textContent,
+            );
+            sndW
+              .querySelector(".wrapper-label span")
+              .setAttribute("data-label", "sound-id");
+            sndW
+              .querySelector("select")
+              .setAttribute(
+                "data-bind",
+                "tasks." + task + ".actions." + _id + ".payload.soundId",
+              );
+            contentHtml = sndW.outerHTML;
+          } else if (_type == "count") {
+            contentHtml =
+              '<span data-label="action-count">' +
+              (getLabel("action-count").textContent || "Count") +
+              '</span> <span data-label="count-from">' +
+              (getLabel("count-from").textContent || "from") +
+              '</span>&nbsp;<input dir="auto" value=1 class="inp-xs" data-bind="' +
+              "tasks." +
+              task +
+              ".actions." +
+              _id +
+              '.payload.start"> <span data-label="count-to">' +
+              (getLabel("count-to").textContent || "to") +
+              '</span>&nbsp;<input dir="auto" value=10 class="inp-xs" data-bind="' +
+              "tasks." +
+              task +
+              ".actions." +
+              _id +
+              '.payload.end"> <span data-label="count-step">' +
+              (getLabel("count-step").textContent || "in steps of") +
+              '</span>&nbsp;<input dir="auto" value=1 class="inp-xs" data-bind="' +
+              "tasks." +
+              task +
+              ".actions." +
+              _id +
+              '.payload.step"> <span data-label="count-every">' +
+              (getLabel("count-every").textContent || "every") +
+              '</span>&nbsp;<input dir="auto" value=1 class="inp-xs" data-bind="' +
+              "tasks." +
+              task +
+              ".actions." +
+              _id +
+              '.payload.interval"><span data-label="sec">' +
+              (getLabel("sec").textContent || "s") +
+              "</span>";
+          }
+          tdVal.innerHTML =
+            '<div style="padding:5px;outline:solid thin">' +
+            '    <input type="hidden" ' +
+            '        data-bind="' +
+            "tasks." +
+            task +
+            ".actions." +
+            _id +
+            '.type" ' +
+            '        value="' +
+            _type +
+            '">' +
+            '    <div class="d-table">' +
+            '        <div class="d-cell" style="width:100%;">' +
+            '           <span data-label="at">' +
+            (getLabel("at").textContent || "At") +
+            '</span> <input dir="auto" ' +
+            'type="number" ' +
+            'min="1" ' +
+            'value="5" ' +
+            'class="inp-xs input-sec" ' +
+            'style="width:75px;" ' +
+            'data-bind="' +
+            "tasks." +
+            task +
+            ".actions." +
+            _id +
+            '.timingSeconds">' +
+            ' <span data-label="sec">' +
+            (getLabel("sec").textContent || "s") +
+            "</span>" +
+            "</div>" +
+            '<div class="d-cell" style="white-space:nowrap;">' +
+            "<div>" +
+            '<button onclick="mvRow(this, \'u\')" class="btnUp">▲</button> ' +
+            '<button onclick="mvRow(this, \'d\')" class="btnDown">▼</button> ' +
+            '<button onclick="removeActionRow(this)" style="color:red">✖</button>' +
+            "</div>" +
+            "</div>" +
+            "</div>" +
+            "<div>" +
+            contentHtml +
+            "</div>" +
+            "</div>";
+          tdVal.style.padding = "2mm";
+          tr.appendChild(tdVal);
+          tbody.appendChild(tr);
+
+        } catch (e) {
+          alert(e + "");
+        }
+      };
+
+      function mvUp(act) {
+        try {
+          if (act.previousElementSibling) {
+            undoMgr.record("tasks");
+            act.previousElementSibling.insertAdjacentElement(
+              "beforebegin",
+              act,
+            );
+            updatePositions();
+          }
+
+        } catch (e) {
+          alert("mvUp\n" + e);
+        }
+      }
+      function mvDown(act) {
+        undoMgr.record("tasks");
+        var container = activitiesContainer();
+        var idx = Array.prototype.indexOf.call(container.children, act);
+        if (idx >= container.children.length - 1) return;
+        var oldIdx = idx;
+        var newIdx = idx + 1;
+        var actId = act.getAttribute("data-activity-id");
+        container.removeChild(act);
+        if (newIdx >= container.children.length) container.appendChild(act);
+        else container.insertBefore(act, container.children[newIdx]);
+        updatePositions();
+      }
+      function duplicateActivity(act) {
+        undoMgr.record("tasks");
+        var clone = createActivityElement(null, "New Task", "30"); //act.cloneNode(true);
+
+        var d = getTaskData(act);
+        var o = {};
+        o.tasks = {};
+        o.tasks[clone.dataset.id] = d.tasks[act.dataset.id];
+        clone.classList.remove("active");
+
+        assignActivityId(clone);
+        reattachActivityHandlers(clone);
+        var container = activitiesContainer();
+        //var idx = Array.prototype.indexOf.call(container.children, act);
+        container.insertBefore(clone, act.nextSibling);
+        rebuildTaskData(o, "actions");
+        setTaskData(clone, o);
+        updatePositions();
+
+        clone.scrollIntoView();
+        clone.classList.add("new-task");
+        setTimeout(function () {
+          clone.classList.remove("new-task");
+        }, 2000);
+        activateTask(clone);
+
+        updateAllScheduleSelects();
+      }
+      function removeActivityHandler(act) {
+        undoMgr.record("tasks");
+        var actId = act.getAttribute("data-activity-id");
+        var savedClone = act.cloneNode(true);
+        var nextSib = act.nextSibling;
+        act.remove();
+        updatePositions();
+        updateAllScheduleSelects();
+      }
+      function addActivityWithUndo() {
+        undoMgr.record("tasks");
+        document.querySelector('[data-for="tasks"]').click();
+        var newAct = createActivityElement(null, "Task", "30");
+        assignActivityId(newAct);
+        activitiesContainer().appendChild(newAct);
+        updatePositions();
+        newAct.scrollIntoView();
+        newAct.classList.add("new-task");
+        setTimeout(function () {
+          newAct.classList.remove("new-task");
+        }, 2000);
+
+        activateTask(newAct);
+
+        updateAllScheduleSelects();
+      }
+      function reattachActivityHandlers(act) {
+        act.querySelector(".up-btn").onclick = function (e) {
+          e.stopPropagation();
+          mvUp(act);
+        };
+        act.querySelector(".down-btn").onclick = function (e) {
+          e.stopPropagation();
+          mvDown(act);
+        };
+        act.querySelector(".duplicate-btn").onclick = function (e) {
+          e.stopPropagation();
+          duplicateActivity(act);
+        };
+        act.querySelector(".remove-btn").onclick = function (e) {
+          e.stopPropagation();
+          removeActivityHandler(act);
+        };
+      }
+      // Media selection and highlight removal
+      document.addEventListener("click", function (e) {
+        var old = document.querySelector(".mediaMenu");
+        if (old) old.classList.remove("mediaMenu");
+        var btnRM = document.getElementById("btnRM");
+        btnRM.setAttribute("disabled", "true");
+        var target = e.target;
+        while (
+          target &&
+          !(target.classList && target.classList.contains("media-item"))
+        ) {
+          target = target.parentNode;
+          if (!target || target === document.body) return;
+        }
+        if (target) {
+          target.classList.add("mediaMenu");
+          btnRM.removeAttribute("disabled");
+        }
+      });
+      function getMediaItemsByType(type) {
+        var arr = [];
+        var i;
+        for (i = 0; i < globalMediaItems.length; i++) {
+          if (globalMediaItems[i].type === type) {
+            arr.push(globalMediaItems[i]);
+          }
+        }
+        return arr;
+      }
+      function getImageSelectOptions(selectedId) {
+        var items = getMediaItemsByType("image");
+        var i;
+        for (i = 0; i < items.length; i++) {
+          items[i].label =
+            items[i].name + " (" + formatBytes(items[i].size) + ")";
+        }
+        return buildOptions(items, {
+          emptyText: "-- None --",
+          valueKey: "id",
+          textKey: "label",
+          selectedValue: selectedId,
+        });
+      }
+      function getSoundSelectOptions(selectedId) {
+        var items = getMediaItemsByType("audio");
+        var i;
+        for (i = 0; i < items.length; i++) {
+          items[i].label =
+            items[i].name + " (" + formatBytes(items[i].size) + ")";
+        }
+        return buildOptions(items, {
+          emptyText: "-- None --",
+          valueKey: "id",
+          textKey: "label",
+          selectedValue: selectedId,
+        });
+      }
+      function getLanguageSelectOptions(selectedLang) {
+        try {
+          if (!selectedLang) {
+            var dl = document.querySelector(
+              'select[data-bind="main.defaultLang"]',
+            );
+            if (dl) dl = dl.value;
+            selectedLang = dl;
+          }
+          return buildOptions(defaultLangs, {
+            valueKey: "code",
+            textKey: "name",
+            selectedValue: selectedLang,
+            extraHtml: '<option value="+">+ Add</option>',
+          });
+        } catch (e) {
+          alert("g...o\n" + e);
+        }
+      }
+      function activateTask(el) {
+        var a, i;
+        a = document.querySelectorAll(".activity.active");
+        for (i = 0; i < a.length; i++) {
+          a[i].classList.remove("active");
+        }
+        if (el) {
+          el.classList.add("active");
+        }
+      }
+      document.addEventListener("click", function (ev) {
+        var e = ev.target;
+        while (e && !e.classList.contains("activity")) {
+          e = e.parentElement;
+        }
+        if (e) {
+          activateTask(e);
+        }
+        if (ev.target.classList.contains("btn-test")) {
+          try {
+            var d = getTaskData(
+              document.querySelector(".app-container:not(.hide)"),
+            );
+            var t = getTaskData(e);
+            d.tasks = t.tasks;
+            delete d.schedule;
+            openIframeOverlay();
+            showLoadingOverlay();
+            sendJsonToIframe(d);
+            setTimeout(hideLoadingOverlay, 800);
+          } catch (e) {
+            hideLoadingOverlay();
+            console.error("Operation failed:", e);
+          }
+        }
+      });
+      // ======================== 1. SOUND WRAPPER ========================
+      // Returns DOM element: <span class="wrapper-sound"> with select + play button
+      // Predefined sound IDs: "beep", "chime", "bell", "notification" (demo)
+      window.createSoundWrapper = function (
+        wrapperId,
+        initialSoundId,
+        labelText,
+      ) {
+        if (!wrapperId)
+          wrapperId =
+            "sound_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+        if (initialSoundId === undefined) initialSoundId = "";
+
+        var wrap = document.createElement("span");
+        wrap.className = "wrapper wrapper-sound";
+        wrap.setAttribute("data-wrapper-type", "sound");
+        wrap.setAttribute("data-wrapper-id", wrapperId);
+
+        // floating label
+        var label = document.createElement("div");
+        label.className = "wrapper-label";
+        label.innerHTML =
+          "🎵 " + "<span>" + (labelText || "Sound Selector") + "</span>";
+        wrap.appendChild(label);
+
+        // select element
+        var select = document.createElement("select");
+        select.setAttribute("name", "sound_select_" + wrapperId);
+        select.className = "sound-select media-select-snd";
+        //select.style.minWidth = '140px';
+        // populate options (predefined sounds)
+        select.innerHTML = getSoundSelectOptions(initialSoundId);
+
+        // inline onchange: update play button state + trigger custom event if needed
+        select.setAttribute("onchange", "updateSoundPlayButtonState(this)");
+
+        // play button
+        var playBtn = document.createElement("button");
+        wrap.appendChild(select);
+        wrap.appendChild(playBtn);
+        updateSoundPlayButtonState(select);
+        return wrap;
+      };
+      // global helper for sound wrapper: update play button state
+      window.updateSoundPlayButtonState = function (selectEl) {
+        var wrap = selectEl.parentNode;
+        if (
+          !wrap ||
+          !wrap.classList ||
+          !wrap.classList.contains("wrapper-sound")
+        )
+          return;
+        var playBtn = wrap.querySelector("button");
+        if (!playBtn) return;
+        var selectedVal = selectEl.value;
+        if (selectedVal && selectedVal !== "") {
+          playBtn.setAttribute("data-current-sound", selectedVal);
+          playBtn.innerHTML =
+            '▶️  <span data-label="play">' +
+            (getLabel("play").textContent || "Play") +
+            "</span>";
+          playBtn.setAttribute("onclick", "playSelectedSound(this)");
+        } else {
+          playBtn.setAttribute("data-current-sound", "");
+          playBtn.innerHTML =
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="4" fill="#e2e8f0"/><path d="M10 6v10.5a3.5 3.5 0 1 0 2 3.5V6l6-2v4l-6 2z" fill="#64748b"/><circle cx="18" cy="18" r="5" fill="#4a90e2"/><text x="18" y="20" font-size="8" text-anchor="middle" fill="white" font-weight="bold">+</text></svg>';
+          playBtn.setAttribute(
+            "onclick",
+            "(function(e){ var btn = e; addSoundWithBase64(function(id){ var w=e.parentElement; while(w && !w.classList.contains('wrapper-sound')) w=w.parentElement; if(!w)return;var s=w.querySelector('select');s.value=id; s.onchange(); }); })(this)",
+          );
+        }
+      };
+
+      window.playSelectedSound = function (btn) {
+        var soundId = btn.getAttribute("data-current-sound");
+        if (!soundId) {
+          alert("No sound selected");
+          return;
+        }
+        var el = document.querySelector('[data-media-id="' + soundId + '"]');
+        if (el) el = el.querySelector("audio");
+        if (el) playSoundAsset(el);
+      };
+
+      function playSoundAsset(el) {
+        if (el == window.currentWebAudioElement) {
+          AudioControl.paused ? AudioControl.play() : AudioControl.pause();
+        } else {
+          if (window.currentWebAudioElement) AudioControl.stop();
+          window.currentWebAudioElement = el;
+          AudioControl.play();
+        }
+      }
+      /**
+       * UI Audio Controller Utility3
+       */
+      var currentWebAudioElement,
+        AudioControl = {
+          paused: true,
+          play: function () {
+            if (typeof Android !== "undefined" && Android.pauseNativeAudio) {
+              Android.playNativeAudio(window.currentWebAudioElement.src);
+            } else if (window.currentWebAudioElement) {
+              window.currentWebAudioElement.play();
+            }
+            this.paused = false;
+          },
+          pause: function () {
+            if (typeof Android !== "undefined" && Android.pauseNativeAudio) {
+              Android.pauseNativeAudio();
+            } else if (window.currentWebAudioElement) {
+              window.currentWebAudioElement.pause();
+            }
+            this.paused = true;
+          },
+
+          resume: function () {
+            if (typeof Android !== "undefined" && Android.resumeNativeAudio) {
+              Android.resumeNativeAudio();
+            } else if (window.currentWebAudioElement) {
+              window.currentWebAudioElement.play();
+            }
+            this.paused = false;
+          },
+
+          stop: function () {
+            if (typeof Android !== "undefined" && Android.stopNativeAudio) {
+              Android.stopNativeAudio();
+            } else if (window.currentWebAudioElement) {
+              window.currentWebAudioElement.pause();
+              window.currentWebAudioElement.currentTime = 0;
+            }
+            this.paused = true;
+          },
+        };
+      // ======================== 2. IMAGE WRAPPER (with square preview) ========================
+      window.createImageWrapper = function (
+        wrapperId,
+        initialImageId,
+        labelText,
+      ) {
+        if (!wrapperId)
+          wrapperId =
+            "img_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+        if (initialImageId === undefined) initialImageId = "";
+        var wrap = document.createElement("span");
+        wrap.className = "wrapper wrapper-img";
+        wrap.setAttribute("data-wrapper-type", "image");
+        wrap.setAttribute("data-wrapper-id", wrapperId);
+
+        var label = document.createElement("div");
+        label.className = "wrapper-label";
+        label.innerHTML =
+          "📷️ " + "<span>" + (labelText || "Image Selector") + "</span>";
+        wrap.appendChild(label);
+
+        var select = document.createElement("select");
+        select.className = "img-select media-select-img";
+        //select.style.minWidth = '140px';
+
+        select.innerHTML = getImageSelectOptions(initialImageId);
+        select.setAttribute("onchange", "updateImagePreview(this)");
+
+        // preview square
+        var previewDiv = document.createElement("div");
+        previewDiv.className = "img-preview";
+        var previewImg = document.createElement("img");
+        previewImg.style.width = "100%";
+        previewImg.style.height = "100%";
+        previewDiv.appendChild(previewImg);
+
+        wrap.appendChild(select);
+        wrap.appendChild(previewDiv);
+        updateImagePreview(select);
+        return wrap;
+      };
+      window.createPreWrapper = function (labelText) {
+        var wrap = document.createElement("span");
+        wrap.className = "wrapper wrapper-pre";
+
+        var label = document.createElement("div");
+        label.className = "wrapper-label";
+        label.innerHTML = " <span>" + (labelText || "Predefined") + "</span>";
+        wrap.appendChild(label);
+
+        var select = document.createElement("select");
+        //select.style.minWidth = '140px';
+        select.innerHTML = buildOptions(
+          [
+            {
+              label:
+                getLabel("announce-elapsed").textContent || "Announce elapsed",
+              val: "elapsed",
+              attr: { "data-label": "announce-elapsed" },
+            },
+            {
+              label:
+                getLabel("announce-remaining").textContent || "Announce left",
+              val: "left",
+              attr: { "data-label": "announce-remaining" },
+            },
+            {
+              label:
+                getLabel("announce-next").textContent || "Announce next task",
+              val: "next",
+              attr: { "data-label": "announce-next" },
+            },
+            {
+              label:
+                getLabel("announce-time").textContent ||
+                "Announce current time",
+              val: "time",
+              attr: { "data-label": "announce-time" },
+            },
+            {
+              label: getLabel("beep").textContent || "BEEP",
+              val: "beep",
+              attr: { "data-label": "beep" },
+            },
+            {
+              label: getLabel("tick").textContent || "TICK",
+              val: "tick",
+              attr: { "data-label": "tick" },
+            },
+          ],
+          {
+            valueKey: "val",
+            textKey: "label",
+          },
+        );
+
+        wrap.appendChild(select);
+        return wrap;
+      };
+      window.updateImagePreview = function (selectEl) {
+        var wrap = selectEl.parentNode;
+        if (!wrap || !wrap.classList || !wrap.classList.contains("wrapper-img"))
+          return;
+        var previewDiv = wrap.querySelector(".img-preview");
+        if (!previewDiv) return;
+        var imgEl = previewDiv.querySelector("img");
+        if (!imgEl) return;
+        var selectedOption = selectEl.options[selectEl.selectedIndex];
+        if (selectedOption && selectedOption.value !== "") {
+          var previewUrl = document
+            .querySelector('[data-media-id="' + selectedOption.value + '"] img')
+            .getAttribute("src"); //selectedOption.getAttribute('data-preview');
+          if (previewUrl) {
+            imgEl.src = previewUrl;
+            imgEl.alt = selectedOption.innerText;
+          } else {
+            imgEl.src =
+              'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"%3E%3Crect width="48" height="48" fill="%23cbd5e1"/%3E%3Ctext x="24" y="28" font-size="20" text-anchor="middle" fill="%2364748b"%3E✓%3C/text%3E%3C/svg%3E';
+          }
+        } else {
+          imgEl.src =
+            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"%3E%3Crect width="48" height="48" fill="%23e2e8f0" rx="4"/%3E%3Crect x="10" y="10" width="28" height="28" fill="none" stroke="%2364748b" stroke-width="2" rx="2"/%3E%3Ccircle cx="22" cy="20" r="4" fill="none" stroke="%2364748b" stroke-width="1.5"/%3E%3Cpath d="M10 34l8-6 6 4 8-6 6 8" fill="none" stroke="%2364748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/%3E%3Ccircle cx="36" cy="36" r="8" fill="%234a90e2"/%3E%3Ctext x="36" y="39" font-size="12" text-anchor="middle" fill="white" font-weight="bold"%3E%2B%3C/text%3E%3C/svg%3E';
+          imgEl.alt = "none";
+        }
+      };
+      // ======================== 3. ACTIVITY WRAPPER (goto when not none) ========================
+      //window.cachedTasksList = [];
+      function buildOptions(items, config) {
+        var html = "";
+        var i, item;
+        var selected;
+        if (config.emptyText) {
+          html +=
+            '<option value="">' + escapeHtml(config.emptyText) + "</option>";
+        }
+        for (i = 0; i < items.length; i++) {
+          item = items[i];
+          selected =
+            config.selectedValue == item[config.valueKey] ? " selected" : "";
+          html +=
+            '<option value="' +
+            escapeHtml(item[config.valueKey]) +
+            '"' +
+            selected;
+          if (config.attrKey) {
+            html +=
+              " " +
+              config.attrKey +
+              '="' +
+              escapeHtml(item[config.attrValueKey]) +
+              '"';
+          }
+          if ("attr" in item)
+            for (var a in item.attr)
+              html += " " + a + '="' + item.attr[a] + '"';
+          html += ">" + escapeHtml(item[config.textKey]) + "</option>";
+        }
+        if (config.extraHtml) {
+          html += config.extraHtml;
+        }
+        return html;
+      }
+      function getTasksList() {
+        var tasksList = [];
+        var tasks = document.querySelectorAll(".activity");
+        for (var i = 0; i < tasks.length; i++) {
+          var id = tasks[i].getAttribute("data-id");
+          var nameInput = tasks[i].querySelector(
+            '[data-bind="' + "tasks." + id + '.name"]',
+          );
+          tasksList.push({
+            id: id,
+            name: nameInput
+              ? nameInput.value
+                ? nameInput.value
+                : "_"
+              : "Unnamed Task",
+          });
+        }
+        //window.cachedTasksList = tasksList;
+        return tasksList;
+      }
+      function getAllTaskSelectOptions(selectedTaskId) {
+        try {
+          return buildOptions(getTasksList(), {
+            emptyText: "-- None --",
+            valueKey: "id",
+            textKey: "name",
+            selectedValue: selectedTaskId,
+            attrKey: "data-task-name",
+            attrValueKey: "name",
+          });
+        } catch (e) {
+          alert(e + "_" + "getAllTaskSelectOptions");
+        }
+      }
+      // Call this after any task add/remove/rename
+      function updateAllScheduleSelects() {
+        var wrappers = document.querySelectorAll(".wrapper-task");
+        var i, select, value;
+        for (i = 0; i < wrappers.length; i++) {
+          select = wrappers[i].querySelector(".task-select");
+          if (!select) continue;
+          value = select.value;
+          select.innerHTML = getAllTaskSelectOptions(value);
+          updateTaskGotoButton(select);
+        }
+        calcTotalDuration();
+      }
+      window.createTaskWrapper = function (
+        wrapperId,
+        initialTaskId,
+        labelText,
+      ) {
+        if (!wrapperId)
+          wrapperId =
+            "act_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+        if (initialTaskId === undefined) initialTaskId = "";
+
+        var wrap = document.createElement("span");
+        wrap.className = "wrapper wrapper-task";
+        wrap.setAttribute("data-wrapper-type", "task");
+        wrap.setAttribute("data-wrapper-id", wrapperId);
+
+        var label = document.createElement("div");
+        label.className = "wrapper-label";
+        label.innerHTML =
+          "🎯 " +
+          '<span data-label="task">' +
+          (labelText || getLabel("task").textContent || "Task") +
+          "</span>&nbsp;<span data-pos></span>";
+        wrap.appendChild(label);
+
+        var select = document.createElement("select");
+        select.className = "task-select";
+        //select.style.minWidth = '160px';
+        // tasks
+        select.innerHTML = getAllTaskSelectOptions(initialTaskId);
+        select.setAttribute("onchange", "updateTaskGotoButton(this)");
+
+        // goto button
+        var gotoBtn = document.createElement("button");
+        gotoBtn.innerHTML =
+          '📍 <span data-label="display">' +
+          (getLabel("display").textContent || "Display") +
+          "</span>";
+        gotoBtn.style.marginLeft = "8px";
+        gotoBtn.setAttribute("type", "button");
+        gotoBtn.setAttribute("data-task-id", initialTaskId || "");
+        gotoBtn.setAttribute("data-task-name", "");
+
+        gotoBtn.setAttribute("onclick", "gotoTask(this)");
+
+        wrap.appendChild(select);
+        wrap.appendChild(gotoBtn);
+        updateTaskGotoButton(select);
+        return wrap;
+      };
+      window.updateTaskGotoButton = function (selectEl) {
+        var wrap = selectEl.parentNode;
+        if (
+          !wrap ||
+          !wrap.classList ||
+          !wrap.classList.contains("wrapper-task")
+        )
+          return;
+        var gotoBtn = wrap.querySelector("button");
+        if (!gotoBtn) return;
+        var selectedOpt = selectEl.options[selectEl.selectedIndex];
+        if (selectedOpt && selectedOpt.value !== "") {
+          var actName =
+            selectedOpt.getAttribute("data-task-name") || selectedOpt.innerText;
+          gotoBtn.removeAttribute("disabled");
+          gotoBtn.setAttribute("data-task-id", selectedOpt.value);
+          gotoBtn.setAttribute("data-task-name", actName);
+        } else {
+          gotoBtn.setAttribute("disabled", "disabled");
+          gotoBtn.setAttribute("data-task-id", "");
+          gotoBtn.setAttribute("data-task-name", "");
+        }
+      };
+      window.gotoTask = function (btn) {
+        var taskId = btn.getAttribute("data-task-id");
+        var taskName = btn.getAttribute("data-task-name");
+        if (!taskId) {
+          alert("No task selected");
+          return;
+        }
+        var t = document.querySelector('.activity[data-id="' + taskId + '"]');
+        if (t) {
+          document.querySelector('[data-for="tasks"]').click();
+          activateTask(t);
+          t.scrollIntoView();
+        }
+      };
+      // ======================== 4. MESSAGE WRAPPER (input, lang selector, add custom lang) ========================
+      var defaultLangs = [
+        { code: "en-US", name: "English (US)" },
+        { code: "fr-FR", name: "Français" },
+        { code: "es-ES", name: "Español" },
+        { code: "de-DE", name: "Deutsch" },
+        { code: "it-IT", name: "Italiano" },
+        { code: "ar-SA", name: "العربية" },
+      ];
+      function createLangSelect() {
+        var langSelect = document.createElement("select");
+        langSelect.className = "msg-lang";
+        langSelect.style.minWidth = "90px";
+        // default languages
+        langSelect.innerHTML = getLanguageSelectOptions();
+
+        langSelect.setAttribute("onchange", "onMessageLangChange(this)");
+        langSelect.setAttribute(
+          "onclick",
+          "if(event.target==this){this.setAttribute('old-value', this.value)}",
+        );
+        return langSelect;
+      }
+      window.createMessageWrapper = function (
+        wrapperId,
+        initialText,
+        initialLang,
+        labelText,
+      ) {
+        if (!wrapperId)
+          wrapperId =
+            "msg_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+        if (initialText === undefined) initialText = "";
+        if (initialLang === undefined) initialLang = "en-US";
+        var wrap = document.createElement("span");
+        wrap.className = "wrapper wrapper-message";
+        wrap.setAttribute("data-wrapper-type", "message");
+        wrap.setAttribute("data-wrapper-id", wrapperId);
+
+        var label = document.createElement("div");
+        label.className = "wrapper-label";
+        label.innerHTML =
+          "💬 " + "<span>" + (labelText || "TTS Message") + "</span>";
+        wrap.appendChild(label);
+
+        // text input
+        var textInput = document.createElement("input");
+        textInput.type = "text";
+        textInput.className = "msg-text";
+        textInput.placeholder = "Type message...";
+        textInput.setAttribute("value", initialText);
+        textInput.style.width = "200px";
+        textInput.style.marginRight = "8px";
+        //textInput.setAttribute('onchange', 'onMessageTextChange(this)');
+
+        // language select
+        var langSelect = createLangSelect();
+        var div = document.createElement("div");
+        div.innerHTML = "<span>" + langSelect.value + "</span>";
+        div.setAttribute("class", "sel-wrap");
+
+        div.setAttribute(
+          "onchange",
+          "this.querySelector('span').textContent=event.target.value;",
+        );
+        // speak preview button
+        var speakBtn = document.createElement("button");
+        speakBtn.innerHTML =
+          '🔊  <span data-label="speak">' +
+          (getLabel("speak").textContent || "Speak") +
+          "</span>";
+        speakBtn.style.marginLeft = "6px";
+        speakBtn.setAttribute("type", "button");
+        speakBtn.setAttribute("onclick", "speakMessage(this)");
+
+        wrap.appendChild(textInput);
+        div.appendChild(langSelect);
+        wrap.appendChild(div);
+        //wrap.appendChild(langSelect);
+        wrap.appendChild(speakBtn);
+
+        return wrap;
+      };
+      window.onMessageLangChange = function (selectEl) {
+        // nothing extra needed
+        if (selectEl && selectEl.value == "+") {
+          addCustomLanguageToMessage(selectEl);
+        }
+      };
+      window.addCustomLanguageToMessage = function (btn) {
+        var customCode = prompt(
+          'Enter language code (e.g., "ja-JP", "pt-BR", "ru-RU"):',
+          "ja-JP",
+        );
+        if (!customCode) return (btn.value = btn.getAttribute("old-value"));
+        customCode = customCode.trim();
+        if (customCode === "")
+          return (btn.value = btn.getAttribute("old-value"));
+        for (var i = 0; i < defaultLangs.length; i++) {
+          if (defaultLangs[i].code.toLowerCase() === customCode.toLowerCase()) {
+            alert("Language code already exists!");
+            btn.value = btn.getAttribute("old-value");
+            return;
+          }
+        }
+        defaultLangs.push({
+          code: customCode,
+          name: customCode.toUpperCase(),
+          custom: true,
+        });
+        btn.innerHTML = getLanguageSelectOptions(customCode);
+
+        updateAllLangSelect();
+      };
+      window.updateAllLangSelect = function () {
+        var msgLang = document.querySelectorAll(".msg-lang");
+        for (var m = 0; m < msgLang.length; m++) {
+          var val = msgLang[m].value;
+          msgLang[m].innerHTML = getLanguageSelectOptions(val);
+        }
+      };
+      window.speakMessage = function (btn) {
+        var wrap = btn.parentNode;
+        if (
+          !wrap ||
+          !wrap.classList ||
+          !wrap.classList.contains("wrapper-message")
+        )
+          return;
+        var textInput = wrap.querySelector(".msg-text");
+        var langSelect = wrap.querySelector(".msg-lang");
+        var message = textInput ? textInput.value : "";
+        var lang = langSelect ? langSelect.value : "en-US";
+        if (!message.trim()) {
+          alert("Please enter a message to speak.");
+        } else speakOfflineText(message, lang);
+      };
+      function speakOfflineText(text, lang) {
+        if (!text) return;
+
+        // Route through your native Android application bridge if present (both 13 & 4.4.2)
+        if (typeof Android !== "undefined" && Android.speakText) {
+          Android.speakText(text, lang);
+        }
+        // Fallback if running inside an independent desktop/mobile web browser context
+        else if (window.speechSynthesis) {
+          var utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = lang || "en-US";
+          window.speechSynthesis.speak(utterance);
+        } else {
+          alert("Speech synthesis is not supported on this browser engine.");
+        }
+      }
+      //**************
+      function sanitizeInt(v) {
+        v = (v || "").replace(/[^\d]/g, "");
+        return v ? parseInt(v, 10) : 0;
+      }
+      function sanitizeInputField(el) {
+        var v = sanitizeInt(el.value);
+        el.value = v;
+      }
+      function updateTotalTime(el) {
+        while (el && el.parentElement && !el.classList.contains("card")) {
+          el = el.parentElement;
+        }
+        if (!el) return;
+        var inp = el.querySelectorAll("input");
+        if (inp.length < 3) return;
+        var h = sanitizeInt(inp[0].value);
+        var m = sanitizeInt(inp[1].value);
+        var s = sanitizeInt(inp[2].value);
+        var total = h * 3600 + m * 60 + s;
+        var hh = Math.floor(total / 3600);
+        var mm = Math.floor((total % 3600) / 60);
+        var ss = total % 60;
+        var hStr = hh < 10 ? "0" + hh : "" + hh;
+        var mStr = mm < 10 ? "0" + mm : "" + mm;
+        var sStr = ss < 10 ? "0" + ss : "" + ss;
+        var out = el.querySelector(".total-value");
+        if (out) out.textContent = hStr + ":" + mStr + ":" + sStr;
+        calcTotalDuration();
+      }
+      function onInputChange(el) {
+        updateTotalTime(el);
+      }
+      function onBlurCleanup(el) {
+        sanitizeInputField(el);
+        updateTotalTime(el);
+      }
+      function isTimeInput(el) {
+        return el && el.classList && el.classList.contains("time-input");
+      }
+      document.addEventListener("input", function (e) {
+        if (isTimeInput(e.target)) onInputChange(e.target);
+      });
+      document.addEventListener("change", function (e) {
+        if (isTimeInput(e.target)) onInputChange(e.target);
+      });
+      document.addEventListener(
+        "blur",
+        function (e) {
+          if (isTimeInput(e.target)) onBlurCleanup(e.target);
+        },
+        true,
+      );
+      function setByPath(obj, path, value) {
+        var parts = path.split(".");
+        var current = obj;
+        var i;
+        for (i = 0; i < parts.length - 1; i++) {
+          if (
+            typeof current[parts[i]] !== "object" ||
+            current[parts[i]] == null
+          ) {
+            current[parts[i]] = {};
+          }
+          current = current[parts[i]];
+        }
+        current[parts[parts.length - 1]] = value;
+      }
+      function getByPath(obj, path) {
+        var parts = path.split(".");
+        var current = obj;
+        var i;
+        for (i = 0; i < parts.length; i++) {
+          if (current == null) {
+            return undefined;
+          }
+          current = current[parts[i]];
+        }
+        return current;
+      }
+      function getTaskData(taskEl) {
+        var data = {};
+        if (taskEl.hasAttribute("data-id"))
+          data.id = taskEl.getAttribute("data-id");
+        var els = taskEl.querySelectorAll("[data-bind]");
+        var i, el, bind, value;
+        for (i = 0; i < els.length; i++) {
+          el = els[i];
+          bind = el.getAttribute("data-bind");
+          if (!bind) {
+            continue;
+          }
+          var attr = bind.split(".").pop();
+          if (attr == "src" && el.hasAttribute(attr)) {
+            value = el.getAttribute(attr);
+          } else if (el.type === "checkbox") {
+            value = el.checked;
+          } else {
+            value = el.value;
+          }
+          setByPath(data, bind, value);
+        }
+        return data;
+      }
+      function emptyTaskData(key) {
+        if (key == "tasks") activitiesContainer().innerHTML = "";
+        if (key == "media") {
+          globalMediaItems = [];
+          refreshAllMediaSelectors();
+          mediaContainer().innerHTML = "";
+        }
+        if (key == "schedule")
+          document.querySelector("#schedule tbody").innerHTML = "";
+      }
+      function rebuildTaskData(data, key) {
+        try {
+          switch (key) {
+            case "schedule":
+              if ("schedule" in data) {
+                for (var i in data.schedule) {
+                  addEmptyScheduleSlot(data.schedule[i].taskId);
+                }
+              }
+              break;
+            case "media":
+              if ("media" in data) {
+                for (var i in data.media) {
+                  var mediaDiv = createMediaElement(
+                    data.media[i].type,
+                    "data.media[i].src",
+                    data.media[i].name,
+                    data.media[i].size,
+                    i,
+                  );
+                  mediaContainer().appendChild(mediaDiv);
+                  addMediaItemToLibrary(
+                    i,
+                    data.media[i].name,
+                    data.media[i].size,
+                    "data.media[i].src",
+                    data.media[i].type,
+                  );
+                }
+              }
+              break;
+            case "tasks":
+              if ("tasks" in data) {
+                var pos = 1; //just update
+                var w = activitiesContainer();
+
+                for (var i in data.tasks) {
+                  var t = createActivityElement(pos++, 0, 0, i);
+                  w.appendChild(t);
+                  if ("actions" in data.tasks[i]) {
+                    var o = {};
+                    o["tasks"] = {};
+                    o["tasks"][i] = data.tasks[i];
+                    rebuildTaskData(o, "actions");
+                  }
+                }
+              }
+              break;
+            case "actions":
+              if ("tasks" in data) {
+                for (var i in data.tasks) {
+                  if ("actions" in data.tasks[i]) {
+                    var t = activitiesContainer().querySelector(
+                      '.activity[data-id="' + i + '"]',
+                    );
+                    var btn = t.querySelector(".theActions button");
+                    for (var ac in data.tasks[i].actions) {
+                      addActionRow(btn, data.tasks[i].actions[ac].type, ac);
+                    }
+                  }
+                }
+              }
+              break;
+          }
+        } catch (e) {
+          alert("rebuildTaskData:\n" + e);
+        }
+      }
+      function setTaskData(taskEl, data) {
+        /*  set */
+        try {
+          undoMgr.isApplying = true;
+          if ("id" in data) taskEl.setAttribute("data-id", data.id);
+          var els = taskEl.querySelectorAll("[data-bind]");
+          var i, el, bind, value;
+
+          for (i = 0; i < els.length; i++) {
+            el = els[i];
+            bind = el.getAttribute("data-bind");
+            if (!bind) {
+              continue;
+            }
+            value = getByPath(data, bind);
+            if (value == null) {
+              continue;
+            }
+            var attr = bind.split(".").pop();
+            if (attr == "src" && el.hasAttribute(attr)) {
+              el.setAttribute(attr, value);
+            } else if (el.type === "checkbox") {
+              el.checked = !!value;
+            } else {
+              el.value = value;
+            }
+            /*trigger existing UI sync logic*/
+            if (typeof el.oninput === "function") {
+              el.oninput();
+            }
+            if (typeof el.onchange === "function") {
+              el.onchange();
+            }
+            if (
+              el.classList.contains("time-input") ||
+              el.classList.contains("input-sec") ||
+              el.tagName.toLowerCase() == "select"
+            ) {
+              triggerChange(el);
+            }
+          }
+          undoMgr.isApplying = !true;
+        } catch (e) {
+          alert("setTaskData\n" + e);
+        }
+      }
+      function triggerChange(el) {
+        var ev;
+        if (document.createEvent) {
+          ev = document.createEvent("HTMLEvents");
+          ev.initEvent("change", true, true);
+          el.dispatchEvent(ev);
+        } else if (document.createEventObject) {
+          ev = document.createEventObject();
+          el.fireEvent("onchange", ev);
+        }
+      }
+      function triggerEvent(el, e) {
+        var ev;
+        if (document.createEvent) {
+          ev = document.createEvent("HTMLEvents");
+          ev.initEvent(e, true, true);
+          el.dispatchEvent(ev);
+        } else if (document.createEventObject) {
+          ev = document.createEventObject();
+          el.fireEvent("on" + e, ev);
+        }
+      }
+
+      window.addEventListener("load", function () {
+        updateUndoRedoButtons();
+
+        (function () {
+          var langSelect = createLangSelect();
+          langSelect.setAttribute("data-bind", "main.defaultLang");
+          var iW = createImageWrapper("", "", "Default Background Image");
+          iW.querySelector(".wrapper-label")
+            .querySelector("span")
+            .setAttribute("data-label", "main-bg-img");
+          iW.querySelector("select").setAttribute(
+            "data-bind",
+            "main.background.imageId",
+          );
+          var sW = createSoundWrapper("", "", "Default Background Sound");
+          sW.querySelector(".wrapper-label span").setAttribute(
+            "data-label",
+            "main-bg-snd",
+          );
+          sW.querySelector("select").setAttribute(
+            "data-bind",
+            "main.background.soundId",
+          );
+
+          document.querySelector("#main .tab-content-inner").innerHTML =
+            '<div class="card wrapper"><div class="wrapper-label">📋 <span data-label="main-title">Title</span>:</div>' +
+            '<input dir="auto" id="title" data-bind="main.title" value="My Activity Program">' +
+            "</div>" +
+            '<div class="card wrapper"><div class="wrapper-label"><span data-label="main-lang">Language</span>:</div>' +
+            langSelect.outerHTML +
+            "</div>" +
+            iW.outerHTML +
+            sW.outerHTML +
+            '<div class="activity-options"><label class="check-label"><input type="checkbox" data-bind="main.logUtterances"> <span data-label="log-utterances">Log Utterances</span></label>' +
+            '<label class="check-label">' +
+            '<input type=checkbox data-bind="main.announceCompleted"> <span data-label="announce-all-completed">Announce "all tasks completed"</span></label>' +
+            "</div>" +
+            '<div class="card wrapper" style="min-width:180px;">' +
+            '  <div class="wrapper-label">⏱️ <span data-label="total-duration">' +
+            (getLabel("total-duration").textContent || "Total Duration") +
+            "</span></div>" +
+            "<table>" +
+            '<tr><td data-name="total-dur-task-count"></td><td><span data-label="tasks">' +
+            (getLabel("tasks").textContent || "Tasks") +
+            '</span>:</td><td><span data-name="total-dur-task-dur" class="total-value">00:00:00</span></td></tr>' +
+            '<tr><td data-name="total-dur-sched-count"><td><span data-label="schedule">' +
+            (getLabel("schedule").textContent || "Schedule") +
+            '</span>:</td><td><span data-name="total-dur-sched-dur" class="total-value">00:00:00</span></td></tr>' +
+            "</table>" +
+            "</div>" +
+            '<div class="panel">' +
+            '            <div class="panel-title">🎨 <span data-label="media-assets">' +
+            (getLabel("media-assets").textContent || "Media Assets") +
+            "</span></div>" +
+            '            <div class="menu">' +
+            '                <button id="addImageBtn">📷 <span data-label="add-image">' +
+            (getLabel("add-image").textContent || "Add Image") +
+            "</span> (base64)</button>" +
+            '                <button id="addSoundBtn">🎵 <span data-label="add-sound">' +
+            (getLabel("add-sound").textContent || "Add Sound") +
+            "</span> (base64)</button>" +
+            '                <button id="btnRM" disabled>❌ <span data-label="remove-media">' +
+            (getLabel("remove-media").textContent || "Remove") +
+            "</span></button>" +
+            "            </div>" +
+            '            <div class="content" id="media"></div>' +
+            "        </div>" +
+            "" +
+            '<div class="card wrapper" style="min-width:180px;">' +
+            '<div class="wrapper-label"><span data-label="total-size">' +
+            (getLabel("total-size").textContent || "Total Size") +
+            "</span></div>" +
+            "<table>" +
+            '<tr><td data-name="total-size-img-count">#</td><td><span data-label="images">' +
+            (getLabel("images").textContent || "Images") +
+            '</span>:</td><td><span class="total-value" data-name="total-size-img">0b</span></td></tr>' +
+            '<tr><td data-name="total-size-audio-count">#</td><td><span data-label="sounds">' +
+            (getLabel("sounds").textContent || "Sounds") +
+            '</span>:</td><td><span class="total-value" data-name="total-size-audio">0b</span></td></tr>' +
+            '<tr><td data-name="total-size-media-count">#</td><td><span data-label="media">' +
+            (getLabel("media").textContent || "Media") +
+            '</span>:</td><td><span class="total-value" data-name="total-size-media">0b</span></td></tr>' +
+            "</table>" +
+            "</div>";
+        })();
+        init();
+      });
+      function activateTab(e) {
+        var t;
+        t = document.querySelectorAll(/*.tab-con>*/ "button.tab-active");
+        for (var i = 0; i < t.length; i++) t[i].classList.remove("tab-active");
+        e.classList.add("tab-active");
+        t = document.querySelectorAll(".active-tab");
+        for (var i = 0; i < t.length; i++) t[i].classList.remove("active-tab");
+        t = e.getAttribute("data-for");
+        if (t) {
+          t = document.querySelector("#" + t);
+          if (t) t.classList.add("active-tab");
+          t = document.querySelectorAll(".menu[data-for]");
+          for (var i = 0; i < t.length; i++) t[i].classList.add("hide");
+          t = document.querySelector('.menu[data-for="' + e.dataset.for + '"]');
+          if (t) t.classList.remove("hide");
+        }
+      }
+    </script>
+    <style>
+      .app-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .app-container {
+        display: table;
+        width: 100%;
+        height: 100%;
+        table-layout: fixed;
+      }
+      .app-container > div {
+        display: table-row;
+      }
+      .content-container {
+        height: 100%;
+      }
+      .content-container > div {
+        display: table-cell;
+        height: 100px; /*ff android*/
+      }
+      .content-container > div > div {
+        height: 100%;
+        overflow-y: auto;
+      }
+      .sel-wrap {
+        color: black;
+      }
+      .sel-wrap {
+        position: relative;
+        display: inline-block;
+        border: 1px solid #888;
+        background: #eee;
+        min-width: 50px;
+        text-align: center;
+        padding: 8px 5px 5px 5px;
+      }
+      .sel-wrap select {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        -webkit-appearance: none; /* Safari/Chrome */
+        -moz-appearance: none; /* Firefox */
+        appearance: none; /* Standard */
+        background: transparent;
+        border: none;
+        outline: none;
+      }
+    </style>
+    <script>
+      function sanitizeFileName(input) {
+        // Define a regular expression to match non-alphanumeric characters
+        const regex = /[^\w\s]/g;
+
+        // Replace all non-alphanumeric characters with an underscore
+        const sanitized = input.replace(regex, "_");
+
+        return sanitized;
+      }
+
+      function save(type) {
+        var data = getTaskData(
+          document.querySelector(".app-container:not(.hide)"),
+        );
+        if (!("tasks" in data))
+          return alert("Your task list is empty. Please add a task first!");
+        data = JSON.stringify(data);
+
+        var title = document.querySelector('[data-bind="main.title"]').value;
+        if (type == "JSON") {
+          if (typeof Android !== "undefined") {
+            if (Android.saveFile) {
+              Android.saveFile(data, sanitizeFileName(title) + ".json");
+            } else {
+              alert("Android interface not ready");
+            }
+            return;
+          }
+          saveToFile(data, type.toLowerCase(), title);
+        }
+        if (type == "HTML") {
+          try {
+            var iframe = document.getElementById("schedulerFrame");
+            if (!iframe) {
+              throw new Error("Iframe not found");
+            }
+            // Access the content window of the iframe
+            var iframeWindow = iframe.contentWindow;
+            if (!iframeWindow || !iframeWindow.document) {
+              throw new Error(
+                "Iframe content window or document is not available",
+              );
+            }
+            iframeWindow =
+              iframeWindow.document.documentElement.cloneNode(true);
+            // Find the script element with data-id 'fullProgram'
+            var fullProgramScript = iframeWindow.querySelector(
+              'script[data-id="fullProgram"]',
+            );
+            if (!fullProgramScript) {
+              throw new Error(
+                'No script element with data-id "fullProgram" found',
+              );
+            }
+            // Replace the text content of the script element
+            fullProgramScript.textContent = "var fullProgram = " + data + ";";
+
+            var fullProgramTitle = iframeWindow.querySelector("title");
+            if (!fullProgramTitle) {
+              throw new Error("No title found");
+            }
+            fullProgramTitle.textContent = escapeHtml(title) + " - Scheduler";
+            data = iframeWindow.outerHTML;
+            if (typeof Android !== "undefined") {
+              if (Android.saveFile) {
+                Android.saveFile(data, sanitizeFileName(title) + ".html");
+              } else {
+                alert("Android interface not ready");
+              }
+              return;
+            }
+            saveToFile(data, type.toLowerCase(), title);
+          } catch (e) {
+            alert("HTML:\n" + e);
+          }
+        }
+      }
+    </script>
+    <style>
+      #iframe-overlay iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+      }
+
+      .overlay-hide {
+        display: none !important;
+      }
+    </style>
+    <script>
+      function openIframeOverlay(url) {
+        var overlay = document.getElementById("iframe-overlay");
+        overlay.classList.remove("overlay-hide");
+        if (location.hash !== "#schedulerpreview") {
+          location.hash = "schedulerpreview";
+        }
+      }
+
+      function closeIframeOverlay() {
+        history.back();
+      }
+    </script>
+  </head>
+  <body data-label="body">
+    <div id="iframe-overlay" class="overlay-hide preview-overlay">
+      <button
+        type="button"
+        class="close-overlay"
+        onclick="closeIframeOverlay()"
+      >
+        ✕
+      </button>
+      <div class="iframe-container overlay-box" style="height: 95%; margin: 0">
+        <iframe
+          id="schedulerFrame"
+          src="scheduler.html"
+          frameborder="0"
+        ></iframe>
+        <!--iframe src="about:blank" id="target-iframe" frameborder="0"></iframe-->
+      </div>
+    </div>
+    <div class="app-container" data-orientation="portrait">
+      <div>
+        <div class="menu" data-container="1">
+          <div
+            class="sel-wrap uiLang"
+            onchange="
+              var s = this.querySelector('select');
+              translateUI(s.value);
+              this.querySelector('span').textContent = s.value.toUpperCase();
+            "
+          >
+            🌐 <span>EN</span
+            ><select>
+              <option value="en">English</option>
+              <option value="ar">العربية</option>
+              <option value="fr">Français</option>
+            </select>
+          </div>
+          <!--div class="sel-wrap" onchange="var s=this.querySelector('select'); load(s.value);s.value='';"><span>📂 <span data-label="menu-load">Load</span></span><select><option></option><option>JSON</option><option>HTML</option></select></div-->
+          <div
+            class="sel-wrap"
+            onchange="
+              var s = this.querySelector('select');
+              load(s.value);
+              s.value = '';
+            "
+          >
+            <span
+              >📂
+              <span data-label="menu-load" title="Load program from file"
+                >Load</span
+              ></span
+            >
+            <select>
+              <option value=""></option>
+              <optgroup label="From File" data-label="from-file">
+                <option value="JSON" data-label="from-json-file">
+                  JSON File
+                </option>
+                <option value="HTML" data-label="from-html-file">
+                  HTML File
+                </option>
+              </optgroup>
+              <optgroup label="Presets / Examples" data-label="from-preset">
+                <option value="example-exam">
+                  📝 <span data-label="from-exam">Example: English Exam</span>
+                </option>
+                <option value="example-hiit">
+                  🏃 <span data-label="from-hiit">Example: HIIT Sport</span>
+                </option>
+              </optgroup>
+            </select>
+          </div>
+          <div
+            class="sel-wrap"
+            onchange="
+              var s = this.querySelector('select');
+              save(s.value);
+              s.value = '';
+            "
+          >
+            <span>💾 <span data-label="menu-save">Save</span></span
+            ><select>
+              <option></option>
+              <option>JSON</option>
+              <option>HTML</option>
+            </select>
+          </div>
+          <button id="saveRunningBtn">
+            ⚡ <span data-label="menu-run">Run</span>
+          </button>
+          <div class="undo-redo-group">
+            <button id="appUndoBtn">
+              ↩️ <span data-label="undo">Undo</span>
+            </button>
+            <button id="appRedoBtn">
+              ↪️ <span data-label="redo">Redo</span>
+            </button>
+          </div>
+          <button onclick="addActivityWithUndo()">
+            ➕ <span data-label="menu-add-task">Add Task</span>
+          </button>
+          <!--button onclick='test()'>test</button-->
+        </div>
+      </div>
+      <div>
+        <div class="tab-con" data-container="2">
+          <button
+            class="tab-btn tab-active"
+            onclick="activateTab(this)"
+            data-for="main"
+          >
+            🏠 <span data-label="tab-main">Main</span>
+          </button>
+          <button class="tab-btn" onclick="activateTab(this)" data-for="tasks">
+            🎯 <span data-label="tab-tasks">Tasks</span>
+          </button>
+          <button
+            class="tab-btn"
+            onclick="activateTab(this)"
+            data-for="schedule"
+          >
+            ⌛ <span data-label="tab-schedule">Schedule</span>
+          </button>
+          <!--button class="tab-btn" onclick="activateTab(this)" data-for="background">🖌️️ <span data-label="tab-preview">Preview</span></button-->
+        </div>
+      </div>
+      <div data-container="4">
+        <div
+          class="menu hide"
+          style="background: lightgray; padding: 6px"
+          data-for="schedule"
+        >
+          <button type="button" id="schedAll">
+            <span data-label="menu-all-tasks">All Tasks</span>
+          </button>
+          <button type="button" id="schedClear">
+            <span data-label="menu-clear">Clear</span>
+          </button>
+          <button type="button" id="schedAdd">
+            ➕ <span data-label="menu-add-slot">Add Slot</span>
+          </button>
+        </div>
+        <div
+          class="menu hide"
+          style="background: lightgray; padding: 6px"
+          data-for="tasks"
+        >
+          <button onclick="addActivityWithUndo()">
+            ➕ <span data-label="menu-add-task">Add Task</span>
+          </button>
+        </div>
+      </div>
+      <div class="content-container" data-container="5">
+        <div>
+          <div class="tab-view active-tab" id="main">
+            <div class="tab-content-inner"></div>
+          </div>
+
+          <div class="tab-view" id="tasks">
+            <div class="tab-content-inner"></div>
+          </div>
+          <div class="tab-view" id="schedule">
+            <div class="tab-content-inner">
+              <table
+                style="width: 100%; border-collapse: collapse"
+                onchange="calcTotalDuration()"
+              >
+                <thead>
+                  <tr>
+                    <th><span data-label="task">Task</span></th>
+                    <th><span data-label="repetitions">Repetitions</span></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!--div class="tab-view" id="background">
+            <div class="tab-content-inner">
+			</div>
+        </div-->
+        </div>
+      </div>
+      <div>
+        <div class="menu footer-menu">
+          <div class="footer-text" data-container="3">
+            <span
+              onclick="toggleAboutModal(true)"
+              style="cursor: pointer; text-decoration: underline"
+              >T&nbsp;Tasks&nbsp;Timer © 2026</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="app-container hide"
+      style="table-layout: auto"
+      data-orientation="landscape"
+    >
+      <div style="display: table-row" class="row row-expand">
+        <div style="display: table-cell" class="">
+          <div class="table full-height">
+            <div style="display: table-row">
+              <!--div style="display:table-cell"-->
+              <div class="menu" data-container="1"></div>
+              <!--/div-->
+            </div>
+            <div class="row-expand" style="display: table-row">
+              <!--div style="display:table-cell"-->
+              <div -class="-tab-con cell" data-container="2"></div>
+              <!--/div-->
+            </div>
+            <div style="display: table-row">
+              <!--div style="display:table-cell"-->
+              <div class="menu footer-menu">
+                <div class="footer-text" data-container="3"></div>
+              </div>
+              <!--/div-->
+            </div>
+          </div>
+        </div>
+        <div class="cell cell-expand" style="white-space: normal">
+          <div class="table full-height">
+            <div style="display: table-row">
+              <!--div style="display:table-cell"-->
+              <div data-container="4"></div>
+              <!--/div-->
+            </div>
+            <div class="content-container row row-expand" data-container="5">
+              <div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      //
+      function toggleAboutModal(show) {
+        var modal = document.getElementById("aboutModal");
+        if (modal) {
+          if (show) {
+            modal.style.display = "block";
+            if (location.hash !== "#about") {
+              location.hash = "about";
+            }
+          }
+        }
+      }
+
+      (function () {
+        var currentOverlay = null;
+        /*clear existing hash on load*/
+        if (location.hash) {
+          history.replaceState(null, "", location.pathname + location.search);
+        }
+        /*remove overlay helper*/
+        function removePreview() {
+          if (currentOverlay && currentOverlay.parentNode) {
+            currentOverlay.parentNode.removeChild(currentOverlay);
+          }
+          currentOverlay = null;
+        }
+        window.addEventListener("beforeunload", function (event) {
+          event.returnValue = "Are you sure you want to leave this page?";
+        });
+        /*hash navigation handler*/
+        
+        window.onhashchange = function (e) {
+          var n = e.newURL.split("#")[1];
+          var o = e.oldURL.split("#")[1];
+          //alert('Old: '+o+'; New: '+n+'; location.hash: '+location.hash);
+          if (location.hash !== "#imgpreview") {
+            removePreview();
+          }
+          if (location.hash !== "#schedulerpreview") {
+            var frameArea = document.getElementById("iframe-overlay");
+            if (frameArea) frameArea.classList.add("overlay-hide");
+            if (iframe.contentWindow) {
+              iframe.contentWindow.postMessage(
+                {
+                  type: "stop",
+                  data: null,
+                },
+                "*",
+              );
+            }
+          }
+          if (location.hash !== "#about") {
+            var modal = document.getElementById("aboutModal");
+            if (modal) {
+              modal.style.display = "none";
+            }
+          }
+        };
+        
+        window.showImagePreview = function (img) {
+          if (!img) {
+            return;
+          }
+          if (img.alt && img.alt == "none") {
+            return (function (e) {
+              var btn = e;
+              addImageWithBase64(function (id) {
+                var w = e.parentElement;
+                while (w && !w.classList.contains("wrapper-img"))
+                  w = w.parentElement;
+                if (!w) return;
+                var s = w.querySelector("select");
+                s.value = id;
+                s.onchange();
+              });
+            })(img);
+          }
+          var src = img.src || img;
+          removePreview();
+          var overlay = document.createElement("div");
+          overlay.className = "preview-overlay";
+          var box = document.createElement("div");
+          box.className = "overlay-box";
+          var closeBtn = document.createElement("button");
+          closeBtn.className = "close-overlay";
+          closeBtn.innerHTML = "✕";
+          var fullImg = document.createElement("img");
+          fullImg.className = "img-preview-img";
+          fullImg.src = src;
+          currentOverlay = overlay;
+          closeBtn.onclick = function (e) {
+            if (e) {
+              e.stopPropagation();
+            }
+            history.back();
+          };
+          overlay.onclick = function () {
+            history.back();
+          };
+          box.onclick = function (e) {
+            if (e) {
+              e.stopPropagation();
+            }
+          };
+          box.appendChild(fullImg);
+          overlay.appendChild(closeBtn);
+          overlay.appendChild(box);
+          document.body.appendChild(overlay);
+          fullImg.onload = function () {
+            box.scrollLeft = (fullImg.width - box.clientWidth) / 2;
+            box.scrollTop = (fullImg.height - box.clientHeight) / 2;
+          };
+          /*
+navigation entry
+*/
+          if (location.hash !== "#imgpreview") {
+            location.hash = "imgpreview";
+          }
+        };
+      })();
+      document.addEventListener("click", function (e) {
+        if (e.target.tagName.toLowerCase() == "img") {
+          showImagePreview(e.target);
+        }
+      });
+      //===
+      function distFromContainer(el, container) {
+        container = container || el.parentElement; // default to parent
+        var er = el.getBoundingClientRect();
+        var cr = container.getBoundingClientRect();
+        return {
+          left: Math.ceil(er.left - cr.left), // px from container left
+          right: Math.ceil(cr.right - er.right), // px from container right
+          top: Math.ceil(er.top - cr.top),
+          bottom: Math.ceil(cr.bottom - er.bottom),
+          containerWidth: Math.ceil(cr.width),
+          width: Math.ceil(er.width),
+        };
+      }
+
+      function addErrorEl(el) {
+        try {
+          if (el.parentElement.classList.contains("input-error")) {
+            el = removeErrorEl(el);
+          }
+          var eel = document.createElement("span");
+          eel.className = "input-error";
+          el.insertAdjacentElement("beforebegin" /*'afterend'*/, eel);
+          //setTimeout(function(){
+          eel.appendChild(el);
+          el.focus();
+          //},0)
+          setTimeout(function () {
+            var d = distFromContainer(eel, eel.parentElement);
+            var e = document.createElement("span");
+            e.setAttribute(
+              "style",
+              "display:inline-block; border:none; outline: none; padding: 4px 6px; font-size: 12px; white-space: nowrap;",
+            );
+            e.textContent = eel.dataset.error;
+            document.body.appendChild(e);
+            var E = e.getBoundingClientRect();
+            for (var i in E)
+              if ("number" == typeof E[i]) E[i] = Math.ceil(E[i]);
+            document.body.removeChild(e);
+
+            maxWidth = Math.min(d.containerWidth - 8, 180);
+            var o = {},
+              w;
+            if (E.width <= maxWidth) {
+              o["width"] = E.width + "px;";
+              w = E.width;
+            } else {
+              w = maxWidth;
+              o["-webkit-animation"] = "err-marquee 4s linear infinite;";
+              o["animation"] = "err-marquee 4s linear infinite;";
+              o["width"] = maxWidth + "px;";
+            }
+            if (d.right + d.width >= w) {
+              o["left"] = "0;";
+            } else {
+              o["left"] = d.right + d.width - w - 4 + "px;";
+            }
+            o["top"] = "-100%;";
+            o["margin-top"] = "4px;";
+            var id = generateId("error");
+            var s = document.createElement("style");
+            s.setAttribute("data-id", id);
+            eel.setAttribute("data-for", id);
+            var c =
+              '.input-error[data-for="' +
+              id +
+              '"]:hover:after,' +
+              '.input-error[data-for="' +
+              id +
+              '"]:focus:after {';
+            for (var i in o) c += i + ":" + o[i];
+            c += "}";
+            s.textContent = c;
+
+            document.body.appendChild(s);
+
+          }, 0);
+
+          return eel;
+        } catch (e) {
+          alert("addErrorEl:\n" + e);
+        }
+      }
+      function removeErrorEl(el) {
+        try {
+          if (el.parentElement.classList.contains("input-error")) {
+            var eel = el.parentElement;
+            var id = eel.getAttribute("data-for");
+            var s = document.querySelector('style[data-id="' + id + '"]');
+            s.parentElement.removeChild(s);
+            var p = eel.parentElement;
+            p.replaceChild(el, eel);
+            
+            el.focus();
+            return el;
+          }
+        } catch (e) {
+          /*alert('removeErrorEl:\n'+e)*/
+        }
+      }
+      function validateSecInput(el) {
+        try {
+          if (!el) {
+            return true;
+          }
+          var value = el.value;
+          var min = el.getAttribute("min");
+          var max = el.getAttribute("max");
+
+          /*
+allow empty temporarily
+*/
+          if (value === "") {
+            return true;
+          }
+          /*
+must be positive integer
+*/
+          if (!/^\d+$/.test(value)) {
+            var eel = addErrorEl(el);
+            eel.setAttribute(
+              "data-error",
+              "must be positive integer" + " * " + "must be positive integer",
+            );
+            
+            return false;
+          }
+          value = parseInt(value, 10);
+          /*
+min
+*/
+          if (min != null && min !== "") {
+            if (value < parseInt(min, 10)) {
+              var eel = addErrorEl(el);
+              eel.setAttribute("data-error", value + " < " + min);
+              return false;
+            }
+          }
+          /*
+max
+*/
+          if (max != null && max !== "") {
+            if (value > parseInt(max, 10)) {
+              var eel = addErrorEl(el);
+              eel.setAttribute("data-error", value + " &gt; " + max);
+              //el.classList.add('input-error');
+              return false;
+            }
+          }
+          /*
+valid
+*/
+          removeErrorEl(el);
+          return true;
+        } catch (e) {
+          alert("validateSecInput:\n" + e);
+        }
+      }
+      /*
+delegated listeners
+*/
+      function handleSecValidation(e) {
+        var el = e.target;
+        if (el && el.classList && el.classList.contains("input-sec")) {
+          validateSecInput(el);
+        }
+      }
+      document.addEventListener("input", handleSecValidation, false);
+
+      //***********************
+    </script>
+    <style>
+      .table {
+        display: table;
+        width: 100%;
+        table-layout: auto;
+      }
+
+      .table.full-height {
+        height: 100%;
+      }
+
+      /* ----- ROWS ----- */
+      .row {
+        display: table-row;
+      }
+
+      /* Row that takes remaining height */
+      .row-expand {
+        height: 100%;
+      }
+
+      /* Normal row with auto height */
+      .row-auto {
+        height: auto;
+      }
+
+      /* ----- CELLS ----- */
+      .cell {
+        display: table-cell;
+        vertical-align: middle;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      /* Cell that takes remaining width */
+      .cell-expand {
+        width: 100%;
+      }
+    </style>
+    <script>
+      var iframe = document.getElementById("schedulerFrame");
+
+      function sendJsonToIframe(jsonData) {
+        function postMessage() {
+          if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage(
+              {
+                type: "loadProgram",
+                data: jsonData,
+              },
+              "*",
+            );
+            console.log("✅ JSON sent to iframe");
+          }
+        }
+
+        if (iframe.contentWindow) {
+          postMessage();
+        } else {
+          alert("Iframe not ready");
+        }
+      }
+
+      // Optional: Auto-load when iframe loads
+      iframe.onload = function () {
+        console.log("Iframe loaded, ready to receive data");
+      };
+
+      // Init
+      function init() {
+        document.getElementById("addImageBtn").onclick = addImageWithBase64;
+        document.getElementById("addSoundBtn").onclick = addSoundWithBase64;
+        document.getElementById("btnRM").onclick = removeSelectedMedia;
+        document.getElementById("saveRunningBtn").onclick = function () {
+          var data = getTaskData(
+            document.querySelector(".app-container:not(.hide)"),
+          );
+          if (!("tasks" in data))
+            return alert("Your task list is empty. Please add a task first!");
+
+          try {
+            openIframeOverlay();
+            showLoadingOverlay();
+            sendJsonToIframe(data);
+            setTimeout(hideLoadingOverlay, 800);
+          } catch (e) {
+            hideLoadingOverlay();
+            console.error("Operation failed:", e);
+          }
+        };
+      }
+
+      function showLoadingOverlay() {
+        // Create overlay if it doesn't exist
+        var overlay = document.getElementById("loading-overlay");
+        if (!overlay) {
+          overlay = document.createElement("div");
+          overlay.id = "loading-overlay";
+          overlay.style.cssText = [
+            "position: fixed",
+            "top: 0",
+            "left: 0",
+            "width: 100%",
+            "height: 100%",
+            "background: rgba(255, 255, 255, 0.8)",
+            "z-index: 9999",
+            "display: flex",
+            "align-items: center",
+            "justify-content: center",
+            "cursor: wait",
+          ].join(";");
+
+          // Create spinner container
+          var spinner = document.createElement("div");
+          spinner.id = "loading-spinner";
+          spinner.style.cssText = [
+            "width: 40px",
+            "height: 40px",
+            "border: 4px solid #f3f3f3",
+            "border-top: 4px solid #3498db",
+            "border-radius: 50%",
+            "animation: spin 1s linear infinite",
+          ].join(";");
+
+          overlay.appendChild(spinner);
+          document.body.appendChild(overlay);
+
+          // Add keyframes for animation (works in Android 4.4.2)
+          var style = document.createElement("style");
+          style.textContent = [
+            "@keyframes spin {",
+            "  0% { transform: rotate(0deg); }",
+            "  100% { transform: rotate(360deg); }",
+            "}",
+            "@-webkit-keyframes spin {",
+            "  0% { -webkit-transform: rotate(0deg); }",
+            "  100% { -webkit-transform: rotate(360deg); }",
+            "}",
+            "#loading-spinner {",
+            "  -webkit-animation: spin 1s linear infinite;",
+            "  animation: spin 1s linear infinite;",
+            "}",
+          ].join("\n");
+          document.head.appendChild(style);
+        }
+        overlay.style.display = "flex";
+        // Prevent body scrolling on mobile
+        document.body.style.overflow = "hidden";
+      }
+
+      function hideLoadingOverlay() {
+        var overlay = document.getElementById("loading-overlay");
+        if (overlay) {
+          overlay.style.display = "none";
+          document.body.style.overflow = "";
+        }
+      }
+
+      function saveToJson() {
+        var blob = new Blob([JSON.stringify(obj, null, 2)], {
+          type: "application/json",
+        });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "scheduler_data.json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        //statusDiv.innerText="Saved JSON.";
+      }
+
+      function saveTo(data, s, n) {
+        var type = data.split(",")[0].split(":")[1].split(";")[0].trim();
+        data = atob(data.split(",")[1]);
+        //data = atob(data)
+        var blob = new Blob([data], { type: type });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = n; //"scheduler_data.json";
+        prompt(s + "; " + n + "; " + type, blob.size + "; " + (s == blob.size));
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+
+      function saveTo(dataURL, expectedSize, name) {
+        try {
+          // 1. Split header and base64
+          var parts = dataURL.split(",");
+          var header = parts[0];
+          var b64 = parts[1];
+          var type = header.split(":")[1].split(";")[0].trim();
+          // 2. Decode base64 -> binary string
+          var binary = atob(b64);
+          // 3. Convert binary string -> Uint8Array
+          var len = binary.length;
+          var bytes = new Uint8Array(len);
+          for (var i = 0; i < len; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          // 4. Create blob with correct bytes
+          var blob = new Blob([bytes], { type: type });
+          // 5. Size check
+          var match = expectedSize == blob.size;
+          //alert( name + '; ' + type+ '\nExpected: ' + expectedSize + ', Got: ' + blob.size + ', Match: ' + match);
+          // 6. Trigger download
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = name;
+          document.body.appendChild(a); // needed for Firefox
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
+        } catch (e) {
+          alert("saveTo:\n" + e);
+        }
+      }
+
+      function saveToFile(data, type, title) {
+        var blob = new Blob([data], { type: "application/octet-stream" });
+        var fileName = sanitizeFileName(title) + "." + type;
+        var url = window.URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
+      }
+
+      function loadFromFile(type, fn) {
+        var input = document.createElement("input");
+        input.setAttribute("style", "position:fixed;left:5%;top:5%;");
+        input.type = "file";
+        input.accept = type == "json" ? "application/" + type : "text/html";
+        input.onchange = function (e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function (ev) {
+            try {
+              fn(ev.target.result);
+            } catch (ex) {
+              alert("Invalid JSON");
+            }
+          };
+          reader.readAsText(file);
+        };
+        document.body.appendChild(input);
+        setTimeout(function () {
+          input.click();
+          setTimeout(function () {
+            document.body.removeChild(input);
+          }, 1000);
+        }, 800);
+      }
+
+      //**** Undo/Redo manager - ES5 safe for Android 4.4.2
+
+      function UndoManager(getState, setState, maxSize) {
+        this.undoStack = [];
+        this.redoStack = [];
+        this.getState = getState; // function(key) -> returns MyApp[key]
+        this.setState = setState; // function(key, value) -> updates MyApp[key] + UI
+        this.maxSize = maxSize || 50;
+        this.isApplying = false;
+      }
+
+      UndoManager.prototype.clone = function (obj) {
+        return JSON.parse(JSON.stringify(obj));
+      };
+
+      // Call before you change data: undoMgr.record('tasks')
+      UndoManager.prototype.record = function (key) {
+        if (this.isApplying) return;
+        var val = this.clone(this.getState(key));
+        this.undoStack.push({ key: key, val: val }); // store key + value
+        this.redoStack = [];
+        if (this.undoStack.length > this.maxSize) this.undoStack.shift();
+        updateUndoRedoButtons();
+      };
+
+      UndoManager.prototype.undo = function () {
+        if (this.undoStack.length === 0) return false;
+        var patch = this.undoStack.pop();
+
+        var currentVal = this.clone(this.getState(patch.key));
+        this.redoStack.push({ key: patch.key, val: currentVal });
+
+        this.isApplying = true;
+        this.setState(patch.key, patch.val); // pass key + old value
+        this.isApplying = false;
+        return true;
+      };
+
+      UndoManager.prototype.redo = function () {
+        if (this.redoStack.length === 0) return false;
+        var patch = this.redoStack.pop();
+
+        var currentVal = this.clone(this.getState(patch.key));
+        this.undoStack.push({ key: patch.key, val: currentVal });
+
+        this.isApplying = true;
+        this.setState(patch.key, patch.val);
+        this.isApplying = false;
+        return true;
+      };
+
+      UndoManager.prototype.canUndo = function () {
+        return this.undoStack.length > 0;
+      };
+      UndoManager.prototype.canRedo = function () {
+        return this.redoStack.length > 0;
+      };
+      // 1. Define how to get/set your whole MyApp state
+      function getState(key) {
+        if (key === "app")
+          return getTaskData(
+            document.querySelector(".app-container:not(.hide)"),
+          );
+        if (key === "main") return getTaskData(document.querySelector("#main"));
+        if (key === "tasks")
+          return getTaskData(document.querySelector("#tasks"));
+        if (key === "media") {
+          return getTaskData(document.querySelector("#media"));
+        }
+        if (key === "schedule")
+          return getTaskData(document.querySelector("#schedule tbody"));
+        var el = document.querySelector('[data-bind="' + key + '"]');
+        //alert(key+'\n'+el.dataset.value);
+        if (el) {
+          return el.type === "checkbox" ? el.checked : el.value;
+        } else {
+          var p = key.split(".");
+          if (p[p.length - 1] == "actions") {
+            var t = document.querySelector(
+              '#tasks [data-id="' + p[1] + '"] tbody',
+            );
+            return getTaskData(t);
+          }
+        }
+        return undefined;
+      }
+
+      function setState(key, val) {
+        if (key === "app") {
+          emptyTaskData("media");
+          emptyTaskData("tasks");
+          emptyTaskData("schedule");
+          rebuildTaskData(val, "media");
+          rebuildTaskData(val, "tasks");
+          rebuildTaskData(val, "schedule");
+          setTaskData(document.querySelector(".app-container:not(.hide)"), val);
+        }
+        if (key === "main") setTaskData(document.querySelector("#main"), val);
+        if (key === "tasks") {
+          document.querySelector('[data-for="' + key + '"]').click();
+          emptyTaskData(key);
+          rebuildTaskData(val, key);
+          setTaskData(document.querySelector("#tasks"), val);
+        }
+        if (key === "media") {
+          document.querySelector('[data-for="' + "main" + '"]').click();
+          //panel
+          emptyTaskData(key);
+          rebuildTaskData(val, key);
+          setTaskData(document.querySelector("#media"), val);
+        }
+        if (key === "schedule") {
+          document.querySelector('[data-for="' + key + '"]').click();
+          emptyTaskData(key);
+          rebuildTaskData(val, key);
+          setTaskData(document.querySelector("#schedule tbody"), val);
+        }
+        var el = document.querySelector('[data-bind="' + key + '"]');
+        if (el) {
+          var p = key.split(".");
+          document.querySelector('[data-for="' + p[0] + '"]').click();
+          if (p[0] == "tasks") {
+            var t = document.querySelector('[data-id="' + p[1] + '"]');
+            activateTask(t);
+            t.scrollIntoView();
+          }
+
+          if (el.type === "checkbox") el.checked = val;
+          else el.value = val;
+          el.scrollIntoView();
+          flashEl(el);
+          triggerChange(el);
+        } else {
+          var p = key.split(".");
+          if (p[p.length - 1] == "actions") {
+            var t = document.querySelector('#tasks [data-id="' + p[1] + '"]');
+            document.querySelector('[data-for="' + p[0] + '"]').click();
+            activateTask(t);
+            t.scrollIntoView();
+            t = t.querySelector("tbody");
+            t.scrollIntoView();
+            flashEl(t);
+            t.innerHTML = "";
+            rebuildTaskData(val, "actions");
+            setTaskData(t, val);
+          }
+        }
+        updateUndoRedoButtons();
+      }
+
+      var undoMgr = new UndoManager(getState, setState, 200);
+
+      schedAll.onclick = function () {
+        var tasks = document.querySelectorAll(".activity");
+        if (tasks.length == 0) return;
+        undoMgr.record("schedule");
+        allTasksSchedule();
+      };
+      function flashEl(el) {
+        var e = document.querySelectorAll("updated-flash");
+        for (var i = 0; i < e.length; i++) e.classList.remove("updated-flash");
+
+        el.classList.add("updated-flash");
+        setTimeout(function () {
+          if (el && el.classList) el.classList.remove("updated-flash");
+        }, 1200);
+      }
+      schedClear.onclick = function () {
+        var tbody = document.querySelector("#schedule tbody");
+        if (!tbody || tbody.innerHTML == "") return;
+        undoMgr.record("schedule");
+        clearTasksSchedule();
+      };
+
+      schedAdd.onclick = function () {
+        undoMgr.record("schedule");
+        addEmptyScheduleSlot();
+      };
+
+      // 5. Buttons
+      document.getElementById("appUndoBtn").onclick = function () {
+        if (undoMgr.undo()) updateUndoRedoButtons();
+      };
+      document.getElementById("appRedoBtn").onclick = function () {
+        if (undoMgr.redo()) updateUndoRedoButtons();
+      };
+
+      function updateUndoRedoButtons() {
+        document.getElementById("appUndoBtn").disabled = !undoMgr.canUndo();
+        document.getElementById("appRedoBtn").disabled = !undoMgr.canRedo();
+      }
+      var focused;
+      document.addEventListener(
+        "focus",
+        function (e) {
+          if (e.target && e.target.dataset && e.target.dataset.bind) {
+            focused = {
+              el: e.target,
+              val:
+                e.target.type === "checkbox"
+                  ? e.target.checked
+                  : e.target.value,
+            };
+          }
+        },
+        true,
+      );
+
+      document.addEventListener(
+        "blur",
+        function (e) {
+          try {
+            if (focused) {
+              if (focused.val !== e.target.value) {
+                undoMgr.undoStack.push({
+                  key: e.target.dataset.bind,
+                  val: focused.val,
+                }); // store key + value
+                undoMgr.redoStack = [];
+              }
+              focused = null;
+            }
+          } catch (e) {
+            alert(e + "--");
+          }
+        },
+        true,
+      );
+    </script>
+    <style>
+      .menu {
+        background: #ffffff;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 5px 10px; /*20px 24px;*/
+        vertical-align: middle;
+      }
+      .menu > * {
+        line-height: 1.5;
+        white-space: nowrap;
+      }
+
+      #title {
+        font-size: 1rem;
+        padding: 8px 12px;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        font-family: inherit;
+      }
+
+      button:not(:disabled):hover {
+        background: #e2e8f0;
+      }
+      .undo-redo-group {
+        background: #eef2ff;
+        padding: 4px 8px;
+        border-radius: 60px;
+        display: inline-block;
+      }
+      .undo-redo-group button {
+        background: white;
+        font-weight: bold;
+        margin: 0 2px;
+      }
+      .panel {
+        position: relative;
+        border: 3px double #4a90e2;
+        background: #fefce8;
+        margin: 10px;
+        padding: 10px;
+        border-radius: 20px;
+      }
+      .panel .panel-title {
+        position: absolute;
+        top: -20px;
+        left: 25px;
+        background: #e8f0ff;
+        padding: 2px 6px;
+        white-space: nowrap;
+        font-weight: bold;
+        box-shadow: 2px 2px 0 #8b6946;
+        border: solid 1px #49607a;
+      }
+      .panel .menu {
+        border-bottom: 1px solid #cbd6ee;
+        padding: 6px 0;
+        margin-bottom: 10px;
+        background: transparent;
+        border: none;
+      }
+      .panel .content {
+        min-height: 80px;
+        padding: 8px;
+      }
+      #media {
+        display: block;
+        min-height: 70px;
+        max-height: 124px;
+        overflow-y: auto;
+      }
+      #media .media-item {
+        display: inline-block;
+        margin: 5px;
+        padding: 4px;
+        padding-right: 30px;
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        background: white;
+        vertical-align: top;
+        cursor: pointer;
+      }
+      #media img {
+        height: 50px;
+        width: auto;
+        max-width: 70%;
+        border-radius: 12px;
+        display: block;
+      }
+      #media audio {
+        height: 40px;
+        max-width: 200px;
+        display: block;
+      }
+
+      .activity.active {
+        background: #e3f2fd !important;
+        border: 2px solid #2196f3 !important;
+      }
+      .activity.active .activity-contents {
+        display: initial;
+      }
+      .activity .activity-contents {
+        display: none;
+      }
+
+      .d-table {
+        display: table;
+        width: 100%;
+      }
+      .d-cell {
+        display: table-cell;
+        vertical-align: middle;
+      }
+      /* Left cell matches the exact width of the new square badge + spacing */
+      .cell-badges {
+        width: 44px;
+        white-space: nowrap;
+      }
+      .cell-name {
+        width: auto;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .cell-action {
+        width: 32px;
+        text-align: right;
+      }
+
+      .activity-fields {
+        margin-bottom: 10px;
+      }
+      .activity-fields .name {
+        /*color: #1c2d3d;*/
+        font-size: 20px;
+        font-weight: bold;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding-left: 2px;
+        padding-right: 8px;
+      }
+      /* Interactive Test Button */
+      .activity-fields .btn-test {
+        background-color: #ff9800;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        text-align: center;
+        cursor: pointer;
+        padding: 0;
+        font-weight: bold;
+        display: inline-block;
+      }
+      .activity-fields .btn-test:active {
+        background-color: #e68a00;
+      }
+
+      .add-img-btn {
+        padding: 6px 12px;
+        border-radius: 16px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+      }
+      .activity-options {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        margin: 8px;
+        border: solid thin;
+      }
+      .activity-divider {
+        margin: 5px auto;
+        border-top: 1px solid #e2e8f0;
+        width: 0;
+      }
+      .activity-buttons {
+        padding: 10px 18px;
+        background: #fafbfc;
+        white-space: nowrap;
+        text-align: center;
+      }
+
+      .inp-md {
+        width: 160px;
+      }
+      .inp-lg {
+        width: 100%;
+      }
+      .inp-xs {
+        width: 50px;
+        text-align: center;
+      }
+      .mediaMenu {
+        outline: 3px solid red;
+      }
+      table tr:first-child .btnUp {
+        visibility: hidden;
+      }
+      table tr:last-child .btnDown {
+        visibility: hidden;
+      }
+    </style>
+    <style>
+      /* ========= TASK CARD STATES ========= */
+      .activity {
+        margin: 12px 6px;
+        background: #f7f7f7;
+        border: 1px solid #cfcfcf;
+        border-radius: 18px;
+        overflow: hidden;
+        /* Android 4.4 safe */
+        box-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+      /* top header */
+      .task-head {
+        padding: 2px 12px 8px;
+        font: bold 18px Arial;
+        border-bottom: 1px solid #d9d9d9;
+        white-space: nowrap;
+      }
+      /* small number square */
+      .activity .pos {
+        display: inline-block;
+        width: 34px;
+        height: 34px;
+        line-height: 34px;
+        text-align: center;
+        border-radius: 7px;
+        margin-right: 10px;
+        color: #fff;
+        font-weight: bold;
+        vertical-align: middle;
+      }
+      /* ========= ACTIVE ========= */
+      .task-active {
+        border-color: #46be73;
+        background: #fbfffc;
+      }
+      .task-active .task-head {
+        background: #edf9f1;
+        color: #1d6b3e;
+        border-bottom-color: #9ddab3;
+      }
+      .task-active .activity .pos {
+        background: #2dbb63;
+      }
+      #schedule tr:nth-child(odd) {
+        border: solid thin #5da5e8;
+        background: #fcfdff;
+      }
+      .#schedule tr:nth-child(even) {
+        border: solid thin #d5d5d5;
+        background: #fafafa;
+      }
+      /* ========= SECONDARY ========= */
+      .activity:nth-child(odd) {
+        border-color: #5da5e8;
+        background: #fcfdff;
+      }
+      .activity:nth-child(odd) .task-head {
+        background: #eef6ff;
+        color: #2f5f96;
+        border-bottom-color: #b9d7f5;
+      }
+      .activity:nth-child(odd) .pos {
+        background: #6aa8e5;
+      }
+      /* ========= NORMAL ========= */
+      .activity:nth-child(even) {
+        border-color: #d5d5d5;
+        background: #fafafa;
+      }
+      .activity:nth-child(even) .task-head {
+        background: #f4f4f4;
+        color: #444;
+      }
+      .activity:nth-child(even) .pos {
+        background: #9ca7b3;
+      }
+      /* ========= ACTION BAR ========= */
+
+      /* base button */
+      .tbtn {
+        width: 40px;
+        height: 43px;
+        border-radius: 10px;
+        border: 1px solid #d6d6d6;
+        background: #f8f8f8;
+        color: #444;
+        font-weight: bold;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+      /* colors */
+      .tbtn-up,
+      .tbtn-down {
+        color: #356ea3;
+      }
+      .tbtn-copy {
+        color: #666;
+      }
+      .tbtn-remove {
+        color: #d94343;
+      }
+      /* text label */
+      .tbtn-label {
+        display: none;
+        margin-left: 5px;
+      }
+      .hide {
+        display: none !important;
+      }
+    </style>
+    <style data-id="portrait">
+      /* portrait mode - used by script */
+    </style>
+    <script>
+      var isKeyboardFocusing = false;
+      var focusTimeout = null;
+
+      // Use focusin to catch bubbling input focus globally
+      document.addEventListener("focusin", function (e) {
+        if (
+          e.target &&
+          (e.target.type === "text" || e.target.tagName === "TEXTAREA")
+        ) {
+          isKeyboardFocusing = true;
+
+          // Clear any existing pending timeout
+          if (focusTimeout) clearTimeout(focusTimeout);
+
+          // Reset the flag after 300ms in case no resize fired
+          focusTimeout = setTimeout(function () {
+            isKeyboardFocusing = false;
+          }, 1000);
+        }
+      });
+
+      function adjustButtonWidth() {
+        if (isKeyboardFocusing) return;
+        // Get the current visible view (portrait or landscape)
+        var isPortrait =
+          /*window.screen.height > window.screen.width;*/ window.innerHeight >
+          window.innerWidth;
+        var portraitView = document.querySelector(
+          '[data-orientation="portrait"]',
+        );
+        var landscapeView = document.querySelector(
+          '[data-orientation="landscape"]',
+        );
+
+        // Determine which is the old view and which is the new view
+        var oldView, newView;
+
+        oldView = portraitView.classList.contains("hide")
+          ? landscapeView
+          : portraitView;
+        newView = oldView == portraitView ? landscapeView : portraitView;
+
+        if (!(
+          (isPortrait && oldView == portraitView) ||
+          (!isPortrait && oldView == landscapeView)
+        )) {
+          // Copy content from data-container 1 to 5
+          for (var i = 1; i <= 5; i++) {
+            var oldElement = oldView.querySelector(
+              '[data-container="' + i + '"]',
+            );
+            var newElement = newView.querySelector(
+              '[data-container="' + i + '"]',
+            );
+
+            if (oldElement && newElement) {
+              newElement.innerHTML = "";
+
+              while (oldElement.firstChild) {
+                newElement.appendChild(oldElement.firstChild);
+              }
+            }
+          }
+          if (isPortrait) {
+            portraitView.classList.remove("hide");
+            landscapeView.classList.add("hide");
+          } else {
+            portraitView.classList.add("hide");
+            landscapeView.classList.remove("hide");
+          }
+        }
+        // 1. Toggle Orientation Views
+        if (!isPortrait) {
+          var e = document.querySelector(
+            '.app-container:not(.hide) [data-container="2"]',
+          );
+          //if(!e.classList.contains('tab-con')){
+          e.style.height =
+            window.innerHeight -
+            32 -
+            (document
+              .querySelector('.app-container:not(.hide) [data-container="1"]')
+              .parentElement.getBoundingClientRect().height +
+              document
+                .querySelector('.app-container:not(.hide) [data-container="3"]')
+                .parentElement.parentElement.getBoundingClientRect().height) +
+            "px";
+          //e.style.width = e.getBoundingClientRect().width +'px';
+          e.style.flexFlow = "column wrap";
+          e.classList.add("tab-con");
+          //}
+        }
+
+        var w,
+          el = document.querySelector(
+            ".app-container:not(.hide) .activity-buttons",
+          );
+        if (el) {
+          w = el.getBoundingClientRect().width;
+        } else {
+          el = document.querySelector(".tab-content-inner");
+          w = el.getBoundingClientRect().width;
+          w -= 5 * 2 + 6 * 2;
+        }
+        w -= 32;
+
+        var s = document.querySelector('style[data-id="portrait"]');
+        if (!s) {
+          s = document.createElement("style");
+          s.dataset.id = "portrait";
+          document.head.appendChild(s);
+        }
+        s.textContent =
+          w >= 92 * 4
+            ? ".tbtn {min-width:90px !important;} .tbtn-label {display:inline !important;}"
+            : "";
+      }
+      window.addEventListener("resize", function () {
+        setTimeout(adjustButtonWidth, 200);
+      });
+      document.addEventListener("DOMContentLoaded", adjustButtonWidth);
+      var lang;
+      var supportedLangs = []; // ['en', 'fr', 'ar'];
+
+      window.addEventListener("load", function () {
+        try {
+          for (var i in trans) {
+            supportedLangs.push(i);
+          }
+
+          var cookieLang = localStorage.getItem("lang");
+
+          if (cookieLang && supportedLangs.indexOf(cookieLang) != -1) {
+            lang = cookieLang;
+          } else {
+            lang = navigator.language.split("-")[0]; // || navigator.browserLanguage;
+            if (supportedLangs.indexOf(lang) == -1) {
+              lang = "en";
+            }
+          }
+
+          //localStorage.setItem('lang', lang);
+          var s = document.querySelector(".uiLang select");
+          s.value = lang;
+
+          triggerEvent(s, "change");
+        } catch (e) {
+          alert("Error setting language:\n" + e);
+        }
+      });
+
+      function getLabel(label) {
+        var L = window.lang || localStorage.getItem("lang") || "en";
+        return trans[L][label];
+      }
+      function translateUI(lang) {
+        try {
+          if (lang in trans) {
+            window.lang = lang;
+            localStorage.setItem("lang", lang);
+            for (var i in trans[lang]) {
+              var e = document.querySelectorAll('[data-label="' + i + '"]');
+              for (var E = 0; E < e.length; E++) {
+                for (var a in trans[lang][i]) {
+                  if (a in e[E]) e[E][a] = trans[lang][i][a];
+                }
+              }
+            }
+          }
+        } catch (e) {
+          alert("trans:\n" + e);
+        }
+      }
+    </script>
+    <style>
+      .check-label {
+        border: solid thin gray;
+        padding: 5px;
+        display: inline-block;
+        margin: 2px;
+      }
+    </style>
+    <style>
+      /* Wrapper base style — inline-block, no flex */
+      .wrapper {
+        display: inline-block;
+        vertical-align: middle /*top*/;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 16px;
+        padding: 8px 12px;
+        margin: 8px 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        position: relative;
+      }
+      select {
+        max-width: 180px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      /* Label floating style */
+      .wrapper-label {
+        position: absolute;
+        top: -10px;
+        left: 16px;
+        background: white;
+        padding: 0 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #475569;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+      }
+      select,
+      input,
+      button {
+        font-family: inherit;
+        font-size: 13px;
+        padding: 6px 10px;
+        margin: 1px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        background: white;
+        -webkit-tap-highlight-color: transparent; /* kill mobile flash */
+      }
+
+      button {
+        background: #eef2ff;
+        transition: 0.1s ease;
+      }
+
+      button:hover:not(:disabled) {
+        background: #e2e8f0;
+      }
+
+      button:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+
+      input:disabled,
+      select:disabled,
+      button:disabled {
+        background: #f1f5f9;
+        color: #94a3b8;
+        cursor: not-allowed;
+      }
+      /* Image preview square */
+      .img-preview {
+        display: inline-block;
+        width: 48px;
+        height: 48px;
+        background: #e2e8f0;
+        border-radius: 12px;
+        margin-left: 8px;
+        vertical-align: middle;
+        overflow: hidden;
+        border: 1px solid #cbd5e1;
+      }
+      .img-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+    </style>
+
+    <style>
+      .card label {
+        display: block;
+        text-align: center;
+        margin-bottom: 2px;
+        font-size: 11px;
+      }
+      .card .time-input {
+        width: 38px;
+        text-align: center;
+      }
+      .total-value {
+        margin-left: 8px;
+        font-weight: bold;
+        background: #0b1c26;
+        display: inline-block;
+        padding: 2px 5px;
+        border-radius: 3rem;
+        letter-spacing: 3px;
+        color: #eef4ff;
+        box-shadow:
+          inset 0 1px 3px #00000040,
+          0 1px 0 #2f4f6e;
+      }
+    </style>
+    <style>
+      .preview-overlay {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 999999;
+        overflow: auto;
+        text-align: center;
+      }
+      .preview-overlay:before {
+        content: "";
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+      }
+      .overlay-box {
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+        width: 75%;
+        height: 75%;
+        margin: 30px 0;
+        background: #111;
+        border: solid 2px #666;
+        border-radius: 8px;
+        overflow: auto;
+      }
+      .img-preview-img {
+        display: block;
+        max-width: none;
+        max-height: none;
+        margin: auto;
+      }
+      .close-overlay {
+        position: fixed;
+        right: 15px;
+        top: 15px;
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        padding: 0;
+        cursor: pointer;
+        z-index: 1000000;
+      }
+    </style>
+    <style>
+      .updated-flash {
+        -webkit-animation: flash 1.2s ease-out;
+        animation: flash 1.2s ease-out;
+      }
+
+      @-webkit-keyframes flash {
+        0% {
+          background-color: #fff176;
+          outline: dotted thin darkblue;
+        } /* bright yellow */
+        100% {
+          background-color: transparent;
+          outline: dotted thin lightblue;
+        }
+      }
+      @keyframes flash {
+        0% {
+          background-color: #fff176;
+          outline: dotted thin darkblue;
+        }
+        100% {
+          background-color: transparent;
+          outline: dotted thin lightblue;
+        }
+      }
+
+      .input-error input {
+        border: 2px solid #e53935;
+        outline: none;
+        background: #fff0f0 !important;
+      }
+
+      span.input-error {
+        display: inline-block;
+        border: none;
+        outline: none;
+        position: relative;
+      }
+
+      .input-error:hover:after,
+      .input-error:focus:after {
+        content: attr(data-error) /*" � " attr(data-error)*/; /* duplicate for loop */
+        position: absolute;
+
+        padding: 4px 6px;
+        background: #e53935;
+        color: #fff;
+        font-size: 12px;
+        border-radius: 3px;
+        z-index: 9999;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      @-webkit-keyframes err-marquee {
+        0% {
+          text-indent: 50%;
+        }
+        100% {
+          text-indent: -100%;
+        }
+      }
+      @keyframes err-marquee {
+        0% {
+          text-indent: 50%;
+        }
+        100% {
+          text-indent: -100%;
+        }
+      }
+    </style>
+    <div id="aboutModal" class="preview-overlay" style="display: none">
+      <button
+        class="close-overlay"
+        onclick="
+          event.stopPropagation();
+          history.back();
+        "
+      >
+        ✕
+      </button>
+      <div class="modal-card">
+        <div class="modal-header">
+          <span class="modal-title" data-label="about-title"
+            >🎯 About T Tasks Timer</span
+          >
+        </div>
+
+        <div class="modal-body">
+          <ul class="modal-list">
+            <li><strong data-label="about-version">Version</strong> 1.0.0</li>
+            <li>
+              <strong data-label="about-issue">Issue Tracker</strong>
+              <a
+                href="https://github.com/am-trouzine/T-Tasks-Timer/issues"
+                target="_blank"
+                >GitHub</a
+              >
+            </li>
+          </ul>
+          <p class="pitch" data-label="about-pitch">
+            <strong>T Tasks Timer</strong> is a lightweight, privacy-focused
+            task runner and sequence scheduler designed to automate your
+            time-blocks.
+          </p>
+
+          <hr class="modal-divider" />
+
+          <h4 data-label="about-how">How It Works</h4>
+          <ul class="modal-list">
+            <li data-label="about-li-1">
+              <strong>⚙️ Create Tasks &amp; Actions:</strong> Build custom
+              tasks. Each task contains individual actions with precise
+              durations, custom spoken texts, or background alerts.
+            </li>
+            <li data-label="about-li-2">
+              <strong>🗓️ Design Your Schedule:</strong> Mix, match, and loop!
+              Sequence your tasks in the timeline in any order you want (e.g.,
+              <em>Task 1</em> → <em>Task 1</em> → <em>Task 2</em>).
+            </li>
+            <li data-label="about-li-3">
+              <strong>⚡ Run &amp; Execute:</strong> Watch your custom sequence
+              execute with live countdowns, background audio, and text-to-speech
+              announcements.
+            </li>
+          </ul>
+
+          <hr class="modal-divider" />
+          <p data-label="about-app">
+            This app is <strong>100% Free and Open Source</strong> under the
+            <strong>Apache 2.0 License</strong>. It runs entirely locally in
+            your browser and uses your device's capabilities.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <a
+            data-label="about-source"
+            href="https://github.com/am-trouzine/T-Tasks-Timer/"
+            target="_blank"
+            class="github-link"
+            >💻 View Source Code on GitHub</a
+          >
+          <div data-label="about-author" class="author-credits">
+            Created by TROUZINE Abderrezzaq © 2026
+          </div>
+        </div>
+      </div>
+    </div>
+    <style>
+      #aboutModal .modal-card {
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+        width: 75%;
+        height: 75%;
+        margin: 30px 0;
+        background: white;
+        border: solid 2px #666;
+        border-radius: 8px;
+        overflow: auto;
+        text-align: initial;
+      }
+
+      #aboutModal .modal-header {
+        background: #1e293b;
+        color: #ffffff;
+        padding: 12px 16px;
+        position: relative;
+      }
+
+      #aboutModal .modal-title {
+        font-size: 18px;
+        font-weight: bold;
+        line-height: 44px;
+      }
+
+      #aboutModal .modal-body {
+        padding: 20px;
+        color: #334155;
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      #aboutModal .modal-body h4 {
+        color: #0f172a;
+        margin-bottom: 8px;
+        font-size: 16px;
+      }
+
+      #aboutModal .modal-list {
+        padding-left: 20px;
+        margin-bottom: 15px;
+      }
+
+      #aboutModal .modal-list li {
+        margin-bottom: 10px;
+      }
+
+      #aboutModal .modal-divider {
+        border: 0;
+        border-top: 1px solid #e2e8f0;
+        margin: 15px 0;
+      }
+
+      #aboutModal .modal-footer {
+        background: #f8fafc;
+        padding: 15px;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      #aboutModal .github-link {
+        display: inline-block;
+        background: #24292e;
+        color: #ffffff;
+        text-decoration: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+
+      #aboutModal .github-link:active {
+        background: #000000;
+      }
+
+      #aboutModal .author-credits {
+        font-size: 12px;
+        color: #64748b;
+      }
+    </style>
+  </body>
+</html>
