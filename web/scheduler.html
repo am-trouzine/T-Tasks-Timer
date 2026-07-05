@@ -33,6 +33,7 @@
         width: 100%;
         margin: auto;
       }
+      /*
       .timer-text {
         position: absolute;
         top: 50%;
@@ -64,6 +65,7 @@
         font-size: 14px;
         cursor: pointer;
       }
+      */
       .task-name {
         font-size: 18px;
         font-weight: bold;
@@ -260,32 +262,29 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
 
       <div class="timer-wrap">
         <svg width="280" height="280" viewBox="0 0 280 280">
-          <circle
-            cx="140"
-            cy="140"
-            r="130"
-            fill="#fff"
-            stroke="#eef0ff"
-            stroke-width="2"
-          ></circle>
-          <g id="dots"></g>
-          <path
-            id="progress"
-            fill="none"
-            stroke="#2b4bff"
-            stroke-width="6"
-            stroke-linecap="round"
-          ></path>
-        </svg>
-        <div class="timer-text">
-          <div class="time">
-            <span class="hh" id="hh">00</span>:<span class="min" id="min"
-              >00</span
-            >:<span class="sec" id="sec">00</span
-            ><span class="ms" id="ms">.0</span>
-          </div>
-          <div class="label" id="timerModeLabel">Remaining</div>
-        </div>
+  <circle
+    cx="140"
+    cy="140"
+    r="130"
+    fill="#fff"
+    stroke="#eef0ff"
+    stroke-width="2"
+  ></circle>
+  <g id="dots"></g>
+  <path
+    id="progress"
+    fill="none"
+    stroke="#2b4bff"
+    stroke-width="6"
+    stroke-linecap="round"
+  ></path>
+  <text id="timerText" x="140" y="125" text-anchor="middle" font-family="monospace" font-size="36" fill="#000">
+    00:00:00
+  </text>
+  <text id="timerLabel" x="140" y="165" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#888">
+    Remaining
+  </text>
+</svg>
       </div>
 
       <div class="btns">
@@ -303,11 +302,6 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
         <button id="add30Btn" type="button">+30 sec</button>
         <button id="sub30Btn" type="button">-30 sec</button>
       </div>
-
-      <!--div class="nav-btns">
-  <button id="prevBtn" type="button">◀ Previous Task</button>
-  <button id="nextBtn" type="button">Next Task ▶</button>
- </div-->
 
       <div class="status status-idle" id="statusDisplay">⏳ Ready</div>
 
@@ -421,10 +415,6 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
       var timerMode = "remaining";
 
       // DOM elements
-      var hhEl = document.getElementById("hh");
-      var minEl = document.getElementById("min");
-      var secEl = document.getElementById("sec");
-      var msEl = document.getElementById("ms");
       var taskNameEl = document.getElementById("taskName");
       var scheduleInfoEl = document.getElementById("scheduleInfo");
       var statusDisplay = document.getElementById("statusDisplay");
@@ -518,6 +508,35 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
           addLogEntry("⏸️ Waiting for user to click resume...");
         }
       });
+      function preInitSpeech() {
+  try {
+    if (window.speechSynthesis) {
+      var dummy = new SpeechSynthesisUtterance(' ');
+      dummy.lang = defLang || 'en-US';
+      dummy.volume = 0;
+      dummy.rate = 1;
+      dummy.pitch = 1;
+      
+      dummy.onstart = function() {
+        window.speechSynthesis.cancel();
+      };
+      dummy.onend = function() {
+        window.speechSynthesis.cancel();
+      };
+      
+      // Speak then immediately cancel
+      window.speechSynthesis.speak(dummy);
+      window.speechSynthesis.cancel();
+      
+      addLogEntry('🎤 Speech synthesis pre-initialized');
+    }
+  } catch(e) {
+    // Silently fail - speech synthesis may not be available
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  preInitSpeech();
+});
       // ==================== AUDIO ENGINE (untouched) ====================
 
       function AuEngine() {
@@ -1054,66 +1073,65 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
         if (!audioObj || !audioObj.src) return;
         AudioEngine.playSound(audioObj.src);
       }
-
-      //===
+      
       function updateDisplay(totalMs, remainingMs) {
-        var remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
-        var elapsedSec = Math.max(
-          0,
-          Math.floor((totalMs - remainingMs) / 1000),
-        );
+  var remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
+  var elapsedSec = Math.max(0, Math.floor((totalMs - remainingMs) / 1000));
 
-        var hours = Math.floor(remainingSec / 3600);
-        var mins = Math.floor((remainingSec % 3600) / 60);
-        var secs = remainingSec % 60;
-        hhEl.innerHTML = pad2(hours);
-        minEl.innerHTML = pad2(mins);
-        secEl.innerHTML = pad2(secs);
+  var hours = Math.floor(remainingSec / 3600);
+  var mins = Math.floor((remainingSec % 3600) / 60);
+  var secs = remainingSec % 60;
+  
+  // Format time string
+  var timeStr = pad2(hours) + ":" + pad2(mins) + ":" + pad2(secs);
+  
+  // Update SVG text elements
+  var timerTextEl = document.getElementById('timerText');
+  var timerLabelEl = document.getElementById('timerLabel');
+  
+  if (timerTextEl) {
+    timerTextEl.textContent = timeStr;
+  }
+  
+  if (timerLabelEl) {
+    timerLabelEl.textContent = timerMode === "remaining" ? "Remaining" : "Elapsed";
+  }
 
-        var ms = Math.floor((remainingMs % 1000) / 100);
-        msEl.innerHTML = "." + ms;
-
-        var labelEl = document.querySelector(".label");
-        if (labelEl) {
-          labelEl.innerText =
-            timerMode === "remaining" ? "Remaining" : "Elapsed";
-        }
-
-        // Update SVG progress circle
-        var pct = totalMs > 0 ? (totalMs - remainingMs) / totalMs : 0;
-        if (timerMode === "remaining") {
-          var remainingPct = 1 - pct;
-          if (remainingPct > 0 && remainingPct < 1) {
-            var endAngle = -Math.PI / 2 + remainingPct * 2 * Math.PI;
-            progressPath.setAttribute(
-              "d",
-              describeArc(140, 140, 120, -Math.PI / 2, endAngle),
-            );
-          } else if (remainingPct >= 1) {
-            progressPath.setAttribute(
-              "d",
-              describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5),
-            );
-          } else {
-            progressPath.setAttribute("d", "");
-          }
-        } else {
-          if (pct > 0 && pct < 1) {
-            var endAngleElapsed = -Math.PI / 2 + pct * 2 * Math.PI;
-            progressPath.setAttribute(
-              "d",
-              describeArc(140, 140, 120, -Math.PI / 2, endAngleElapsed),
-            );
-          } else if (pct >= 1) {
-            progressPath.setAttribute(
-              "d",
-              describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5),
-            );
-          } else {
-            progressPath.setAttribute("d", "");
-          }
-        }
-      }
+  // Update SVG progress circle
+  var pct = totalMs > 0 ? (totalMs - remainingMs) / totalMs : 0;
+  if (timerMode === "remaining") {
+    var remainingPct = 1 - pct;
+    if (remainingPct > 0 && remainingPct < 1) {
+      var endAngle = -Math.PI / 2 + remainingPct * 2 * Math.PI;
+      progressPath.setAttribute(
+        "d",
+        describeArc(140, 140, 120, -Math.PI / 2, endAngle),
+      );
+    } else if (remainingPct >= 1) {
+      progressPath.setAttribute(
+        "d",
+        describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5),
+      );
+    } else {
+      progressPath.setAttribute("d", "");
+    }
+  } else {
+    if (pct > 0 && pct < 1) {
+      var endAngleElapsed = -Math.PI / 2 + pct * 2 * Math.PI;
+      progressPath.setAttribute(
+        "d",
+        describeArc(140, 140, 120, -Math.PI / 2, endAngleElapsed),
+      );
+    } else if (pct >= 1) {
+      progressPath.setAttribute(
+        "d",
+        describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5),
+      );
+    } else {
+      progressPath.setAttribute("d", "");
+    }
+  }
+}
       // ==================== SCHEDULER ENGINE ====================
       var Scheduler = (function () {
         var running = false;
@@ -1150,6 +1168,7 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
           if (tickCallback) tickCallback(totalMs, remainingMs);
 
           //=== option 1===
+          
           if (secQueu != remainingSec) {
             secQueu = remainingSec;
             for (var i = 0; i < actionList.length; i++) {
@@ -1191,7 +1210,7 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
           running = true;
           paused = false;
           tickCallback = onTick;
-          secQueu = totalSeconds + 1;
+          secQueu = -1; //totalSeconds + 1;
           totalMs = totalSeconds * 1000;
           remainingMs = totalMs;
 
@@ -1790,6 +1809,7 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
 
           if (!userInteracted) {
             userInteracted = true;
+            preInitSpeech();
           }
 
           if (Scheduler.isPaused()) {
@@ -1818,6 +1838,7 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
         Scheduler.pause();
         updateStatus("Paused", "paused");
         addLogEntry("⏸ Paused");
+        clearTTS()
         tts("Paused", "en-US");
         unlock();
         AudioEngine.pauseAll();
@@ -1981,7 +2002,7 @@ var sub30Btn = document.getElementById('sub30Btn');
           switchTab("bg");
         };
 
-        var labelEl = document.querySelector(".label");
+        var labelEl = document.getElementById('timerLabel'); //document.querySelector(".label");
         if (labelEl) {
           labelEl.onclick = function () {
             timerMode = timerMode === "remaining" ? "elapsed" : "remaining";
@@ -2003,6 +2024,7 @@ var sub30Btn = document.getElementById('sub30Btn');
         }
         if (event.data && event.data.type === "stop") {
           AudioEngine.stopAll();
+          clearTTS()
           Scheduler.stop();
           addLogEntry("stopped");
           unlock();
