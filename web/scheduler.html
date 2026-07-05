@@ -78,9 +78,59 @@
         margin: 5px 0;
       }
 
-      .adjust-btns {
-        margin-top: 10px;
-      }
+.adjust-btns {
+  margin-top: 10px;
+  text-align: center;
+}
+.adjust-group {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+.adjust-group button {
+  padding: 6px 12px;
+  margin: 0 2px;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  background: #2b4bff;
+  color: white;
+  min-width: 45px;
+}
+.adjust-group button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.adjust-group button:active:not(:disabled) {
+  -webkit-transform: scale(0.95);
+  transform: scale(0.95);
+}
+.adjust-separator {
+  margin: 0 8px;
+  color: #999;
+  font-weight: bold;
+}
+.adjust-units {
+  display: inline-block;
+  margin-left: 10px;
+}
+.adjust-units label {
+  margin: 0 6px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+}
+.adjust-units input[type="radio"] {
+  margin-right: 3px;
+  cursor: pointer;
+}
+.adjust-units label.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.adjust-units label.disabled input[type="radio"] {
+  cursor: not-allowed;
+}
       button {
         padding: 8px 14px;
         margin: 0 4px;
@@ -289,20 +339,26 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
 
       <div class="btns">
         <button id="startPauseBtn" type="button">▶ Start</button>
-        <!--button id="startBtn" type="button">▶ Start</button>
-        <button id="pauseBtn" type="button">⏸ Pause</button-->
         <button id="resetBtn" type="button">🔄 Reset</button>
         <button id="reloadBtn" type="button">🔃 Reload</button>
       </div>
 
       <div class="adjust-btns">
-        <button id="add5Btn" type="button">+5 sec</button>
-        <button id="sub5Btn" type="button">-5 sec</button>
-        <button id="add10Btn" type="button">+10 sec</button>
-        <button id="sub10Btn" type="button">-10 sec</button>
-        <button id="add30Btn" type="button">+30 sec</button>
-        <button id="sub30Btn" type="button">-30 sec</button>
-      </div>
+  <div class="adjust-group">
+    <button id="sub30Btn" type="button">-30</button>
+    <button id="sub10Btn" type="button">-10</button>
+    <button id="sub5Btn" type="button">-5</button>
+    <span class="adjust-separator">|</span>
+    <button id="add5Btn" type="button">+5</button>
+    <button id="add10Btn" type="button">+10</button>
+    <button id="add30Btn" type="button">+30</button>
+  </div>
+  <div class="adjust-units">
+    <label><input type="radio" name="adjustUnit" value="sec" checked> Sec</label>
+    <label><input type="radio" name="adjustUnit" value="min"> Min</label>
+    <label><input type="radio" name="adjustUnit" value="hour"> Hr</label>
+  </div>
+</div>
 
       <div class="status status-idle" id="statusDisplay">⏳ Ready</div>
 
@@ -420,16 +476,18 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
       var scheduleInfoEl = document.getElementById("scheduleInfo");
       var statusDisplay = document.getElementById("statusDisplay");
       var logPanel = document.getElementById("logPanel");
-      //var startBtn = document.getElementById("startBtn");
-      //var pauseBtn = document.getElementById("pauseBtn");
       var resetBtn = document.getElementById("resetBtn");
       var prevBtn = document.getElementById("prevBtn");
-      var nextBtn = document.getElementById("nextBtn");
-      var add5Btn = document.getElementById("add5Btn");
+      //var nextBtn = document.getElementById("nextBtn");
+      //var add5Btn = document.getElementById("add5Btn");
       var sub5Btn = document.getElementById("sub5Btn");
       var tabLogBtn = document.getElementById("tabLogBtn");
       var tabBgBtn = document.getElementById("tabBgBtn");
       var bgPanel = document.getElementById("bgPanel");
+      var unitRadios = document.querySelectorAll('input[name="adjustUnit"]');
+var adjustButtons = document.querySelectorAll('.adjust-group button');
+var adjustLabels = document.querySelectorAll('.adjust-units label');
+     
       //===
       var wakeLock = null,
         locked = false;
@@ -1820,7 +1878,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function resetStartPauseBtn(){
   startPauseBtn.innerHTML = '▶ Start';
   startPauseBtn.style.background = '#2b4bff';
-  startPauseBtn.dataset.control='start'
+  startPauseBtn.dataset.control='start';
+  
+  setAdjustControlsEnabled()
 }
 document.getElementById('startPauseBtn').addEventListener('click', function() {
     var btn = this;
@@ -1832,6 +1892,7 @@ document.getElementById('startPauseBtn').addEventListener('click', function() {
         btn.innerHTML = '⏸ Pause';
         btn.style.background = '#f59e0b'; // Orange for pause
         btn.dataset.control='pause'
+        setAdjustControlsEnabled(true);
         return
       }
     } else {
@@ -1885,7 +1946,6 @@ reloadBtn.onclick=reloadProgram;
       }
 
       function resetTimer() {
-        //clear tts - stopall
         AudioEngine.stopAll();
         clearTTS()
         var wasPaused = Scheduler.isPaused();
@@ -1930,7 +1990,7 @@ function reloadProgram() {
 resetSVG();
 resetStartPauseBtn();
     
-    // 4. Load first task
+    // Load first task
     if (scheduleList.length > 0) {
         loadTaskByIndex(0);
     }
@@ -2040,6 +2100,57 @@ resetStartPauseBtn();
           tabLogBtn.className = "tab-cell tab-inactive";
         }
       }
+      
+      function getSelectedUnit() {
+  var unit = 'sec';
+  for (var i = 0; i < unitRadios.length; i++) {
+    if (unitRadios[i].checked) {
+      unit = unitRadios[i].value;
+      break;
+    }
+  }
+  return unit;
+}
+// Unified adjustment handler
+
+
+function adjustDuration(seconds) {
+  if (!currentTask) return;
+  if (!Scheduler.isRunning() || Scheduler.isPaused()) return;
+  
+  var unit = getSelectedUnit();
+  var multiplier = 1;
+  if (unit === 'min') multiplier = 60;
+  else if (unit === 'hour') multiplier = 3600;
+  
+  var totalSeconds = seconds * multiplier;
+  addSecondsToTimer(totalSeconds);
+  
+  var unitLabel = unit === 'sec' ? 'sec' : (unit === 'min' ? 'min' : 'hr');
+  addLogEntry(
+    (seconds > 0 ? '➕ Added ' : '➖ Subtracted ') + 
+    Math.abs(seconds) + ' ' + unitLabel + 
+    (Math.abs(seconds) > 1 ? 's' : '')
+  );
+}
+
+function setAdjustControlsEnabled(enabled) {
+  for (var i = 0; i < adjustButtons.length; i++) {
+    adjustButtons[i].disabled = !enabled;
+  }
+  return ;
+  for (var i = 0; i < adjustLabels.length; i++) {
+    if (enabled) {
+      adjustLabels[i].classList.remove('disabled');
+    } else {
+      adjustLabels[i].classList.add('disabled');
+    }
+    var radio = adjustLabels[i].querySelector('input[type="radio"]');
+    if (radio) {
+      radio.disabled = !enabled;
+    }
+  }
+}
 
       // ==================== INITIALIZATION ====================
       function init() {
@@ -2048,36 +2159,19 @@ resetStartPauseBtn();
         buildScheduleList();
         loadTaskByIndex(0);
 
-        //startBtn.onclick = startTimer;
-        //pauseBtn.onclick = pauseTimer;
         resetBtn.onclick = resetTimer;
         prevBtn.onclick = goToPrevTask;
         nextBtn.onclick = goToNextTask;
-        add5Btn.onclick = function () {
-          addSecondsToTimer(5);
-        };
-        sub5Btn.onclick = function () {
-          addSecondsToTimer(-5);
-        };
-
-        /*
+        
+/*
+var add5Btn = document.getElementById('add5Btn');
+var sub5Btn = document.getElementById('sub5Btn');
 var add10Btn = document.getElementById('add10Btn');
 var sub10Btn = document.getElementById('sub10Btn');
 var add30Btn = document.getElementById('add30Btn');
 var sub30Btn = document.getElementById('sub30Btn');
 */
-        add10Btn.onclick = function () {
-          addSecondsToTimer(10);
-        };
-        sub10Btn.onclick = function () {
-          addSecondsToTimer(-10);
-        };
-        add30Btn.onclick = function () {
-          addSecondsToTimer(30);
-        };
-        sub30Btn.onclick = function () {
-          addSecondsToTimer(-30);
-        };
+   
 
         tabLogBtn.onclick = function () {
           switchTab("log");
@@ -2085,6 +2179,29 @@ var sub30Btn = document.getElementById('sub30Btn');
         tabBgBtn.onclick = function () {
           switchTab("bg");
         };
+        
+        
+(function setupAdjustmentButtons() {
+  var buttons = [
+    { id: 'add5Btn', value: 5 },
+    { id: 'sub5Btn', value: -5 },
+    { id: 'add10Btn', value: 10 },
+    { id: 'sub10Btn', value: -10 },
+    { id: 'add30Btn', value: 30 },
+    { id: 'sub30Btn', value: -30 }
+  ];
+  
+  for (var i = 0; i < buttons.length; i++) {
+    var btn = document.getElementById(buttons[i].id);
+    if (btn) {
+      btn.addEventListener('click', (function(val) {
+        return function() {
+          adjustDuration(val);
+        };
+      })(buttons[i].value));
+    }
+  }
+})()
 
         var labelEl = document.getElementById('timerLabel'); //document.querySelector(".label");
         if (labelEl) {
