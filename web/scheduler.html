@@ -288,8 +288,9 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
       </div>
 
       <div class="btns">
-        <button id="startBtn" type="button">▶ Start</button>
-        <button id="pauseBtn" type="button">⏸ Pause</button>
+        <button id="startPauseBtn" type="button">▶ Start</button>
+        <!--button id="startBtn" type="button">▶ Start</button>
+        <button id="pauseBtn" type="button">⏸ Pause</button-->
         <button id="resetBtn" type="button">🔄 Reset</button>
         <button id="reloadBtn" type="button">🔃 Reload</button>
       </div>
@@ -419,8 +420,8 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
       var scheduleInfoEl = document.getElementById("scheduleInfo");
       var statusDisplay = document.getElementById("statusDisplay");
       var logPanel = document.getElementById("logPanel");
-      var startBtn = document.getElementById("startBtn");
-      var pauseBtn = document.getElementById("pauseBtn");
+      //var startBtn = document.getElementById("startBtn");
+      //var pauseBtn = document.getElementById("pauseBtn");
       var resetBtn = document.getElementById("resetBtn");
       var prevBtn = document.getElementById("prevBtn");
       var nextBtn = document.getElementById("nextBtn");
@@ -501,7 +502,8 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
       document.addEventListener("visibilitychange", function () {
         if (document.hidden) {
           // User quit or minimized window -> release and pause everything
-          if (locked) pauseTimer(); //unlock();
+          if (locked) //pauseTimer(); //unlock();
+          if (Scheduler.isRunning() && !Scheduler.isPaused()) startPauseBtn.click();
         } else {
           // User came back -> Note: Android 4.4 requires user interaction
           // to resume video play, so call your click-to-resume trigger here.
@@ -1802,6 +1804,42 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // ==================== TIMER CONTROL ====================
+      // Single toggle button handler
+      function resetSVG(){
+          // Reset SVG to initial state (empty circle)
+    progressPath.setAttribute('d', '');
+    
+    // Reset timer display
+    var timeStr = '00:00:00';
+    var timerTextEl = document.getElementById('timerText');
+    if (timerTextEl) timerTextEl.textContent = timeStr;
+    //var timerLabelEl = document.getElementById('timerLabel');
+    //if (timerLabelEl) timerLabelEl.textContent = 'Remaining';
+
+}
+function resetStartPauseBtn(){
+  startPauseBtn.innerHTML = '▶ Start';
+  startPauseBtn.style.background = '#2b4bff';
+  startPauseBtn.dataset.control='start'
+}
+document.getElementById('startPauseBtn').addEventListener('click', function() {
+    var btn = this;
+    if(!btn.dataset.control)btn.dataset.control='start';
+    var state =btn.dataset.control;
+    if(state=='start'){
+      state=startTimer();
+      if(state){
+        btn.innerHTML = '⏸ Pause';
+        btn.style.background = '#f59e0b'; // Orange for pause
+        btn.dataset.control='pause'
+        return
+      }
+    } else {
+      pauseTimer();
+    }
+    resetStartPauseBtn()
+});
+reloadBtn.onclick=reloadProgram;
       function startTimer() {
         try {
           if (!currentTask) return;
@@ -1828,6 +1866,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addLogEntry("▶ Started: " + currentTask.name);
           }
           lock();
+          return true;
         } catch (e) {
           alert(e + "_startTimer");
         }
@@ -1838,13 +1877,17 @@ document.addEventListener('DOMContentLoaded', function() {
         Scheduler.pause();
         updateStatus("Paused", "paused");
         addLogEntry("⏸ Paused");
-        clearTTS()
+        clearTTS();
+        AudioEngine.pauseAll();
         tts("Paused", "en-US");
         unlock();
-        AudioEngine.pauseAll();
+        return true;
       }
 
       function resetTimer() {
+        //clear tts - stopall
+        AudioEngine.stopAll();
+        clearTTS()
         var wasPaused = Scheduler.isPaused();
         Scheduler.start(
           currentTaskTotalSeconds,
@@ -1857,6 +1900,46 @@ document.addEventListener('DOMContentLoaded', function() {
         addLogEntry("🔄 Reset current task");
         tts("Reset", "en-US");
       }
+      
+      function resetTimer() {
+    // Stop everything
+    unlock();
+    AudioEngine.stopAll();
+    clearTTS();
+    Scheduler.stop();
+resetSVG();
+resetStartPauseBtn();
+    // Reload current task
+    if (currentTask) {
+        loadTaskByIndex(currentScheduleIndex);
+    }
+    
+    updateStatus('Ready', 'idle');
+    addLogEntry('🔄 Reset current task');
+    tts("Reset", "en-US");
+}
+
+function reloadProgram() {
+    // Stop everything
+    unlock();
+    AudioEngine.stopAll();
+    clearTTS();
+    Scheduler.stop();
+    
+    // Reset SVG to initial state
+resetSVG();
+resetStartPauseBtn();
+    
+    // 4. Load first task
+    if (scheduleList.length > 0) {
+        loadTaskByIndex(0);
+    }
+    
+    updateStatus('Ready', 'idle');
+    addLogEntry('🔄 Reloaded to first task');
+    tts("Reload", "en-US");
+}
+
 
       function addSecondsToTimer(secs) {
         if (!currentTask) return;
@@ -1887,9 +1970,10 @@ document.addEventListener('DOMContentLoaded', function() {
               "{activity}",
               fullProgram.main.title,
             );
-            tts(t, defLang, stopBackgroundSound);
+            tts(t, defLang)//, stopBackgroundSound);
           }
           unlock();
+          resetStartPauseBtn();
         }
       }
 
@@ -1964,8 +2048,8 @@ document.addEventListener('DOMContentLoaded', function() {
         buildScheduleList();
         loadTaskByIndex(0);
 
-        startBtn.onclick = startTimer;
-        pauseBtn.onclick = pauseTimer;
+        //startBtn.onclick = startTimer;
+        //pauseBtn.onclick = pauseTimer;
         resetBtn.onclick = resetTimer;
         prevBtn.onclick = goToPrevTask;
         nextBtn.onclick = goToNextTask;
@@ -2021,6 +2105,7 @@ var sub30Btn = document.getElementById('sub30Btn');
           buildScheduleList();
           loadTaskByIndex(0);
           addLogEntry("📥 New program loaded from parent");
+          resetStartPauseBtn();
         }
         if (event.data && event.data.type === "stop") {
           AudioEngine.stopAll();
