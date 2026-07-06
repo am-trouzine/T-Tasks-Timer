@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Activity Scheduler</title>
-    <style type="text/css">
+    <style>
       * {
         box-sizing: border-box;
       }
@@ -33,39 +33,6 @@
         width: 100%;
         margin: auto;
       }
-      /*
-      .timer-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 100%;
-        -webkit-transform: translate(-50%, -50%);
-        transform: translate(-50%, -50%);
-      }
-      .time {
-        font-size: 36px;
-        line-height: 1;
-      }
-      .time > span {
-        font-family: monospace;
-      }
-      .time .min {
-        color: #000;
-      }
-      .time .sec {
-        color: #2b4bff;
-      }
-      .time .ms {
-        color: #888;
-        font-size: 20px;
-      }
-      .label {
-        margin-top: 8px;
-        color: #888;
-        font-size: 14px;
-        cursor: pointer;
-      }
-      */
       .task-name {
         font-size: 18px;
         font-weight: bold;
@@ -78,59 +45,59 @@
         margin: 5px 0;
       }
 
-.adjust-btns {
-  margin-top: 10px;
-  text-align: center;
-}
-.adjust-group {
-  display: inline-block;
-  margin-bottom: 8px;
-}
-.adjust-group button {
-  padding: 6px 12px;
-  margin: 0 2px;
-  font-size: 13px;
-  cursor: pointer;
-  border: none;
-  border-radius: 4px;
-  background: #2b4bff;
-  color: white;
-  min-width: 45px;
-}
-.adjust-group button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.adjust-group button:active:not(:disabled) {
-  -webkit-transform: scale(0.95);
-  transform: scale(0.95);
-}
-.adjust-separator {
-  margin: 0 8px;
-  color: #999;
-  font-weight: bold;
-}
-.adjust-units {
-  display: inline-block;
-  margin-left: 10px;
-}
-.adjust-units label {
-  margin: 0 6px;
-  font-size: 13px;
-  color: #555;
-  cursor: pointer;
-}
-.adjust-units input[type="radio"] {
-  margin-right: 3px;
-  cursor: pointer;
-}
-.adjust-units label.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.adjust-units label.disabled input[type="radio"] {
-  cursor: not-allowed;
-}
+      .adjust-btns {
+        margin-top: 10px;
+        text-align: center;
+      }
+      .adjust-group {
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+      .adjust-group button {
+        padding: 6px 12px;
+        margin: 0 2px;
+        font-size: 13px;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+        background: #2b4bff;
+        color: white;
+        min-width: 45px;
+      }
+      .adjust-group button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .adjust-group button:active:not(:disabled) {
+        -webkit-transform: scale(0.95);
+        transform: scale(0.95);
+      }
+      .adjust-separator {
+        margin: 0 8px;
+        color: #999;
+        font-weight: bold;
+      }
+      .adjust-units {
+        display: inline-block;
+        margin-left: 10px;
+      }
+      .adjust-units label {
+        margin: 0 6px;
+        font-size: 13px;
+        color: #555;
+        cursor: pointer;
+      }
+      .adjust-units input[type="radio"] {
+        margin-right: 3px;
+        cursor: pointer;
+      }
+      .adjust-units label.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .adjust-units label.disabled input[type="radio"] {
+        cursor: not-allowed;
+      }
       button {
         padding: 8px 14px;
         margin: 0 4px;
@@ -198,135 +165,93 @@
       .tab-head td BUTTON {
         width: 90%;
       }
-      
+
       .timer-bg-container {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-  padding: 20px;
-  margin: 10px auto;
-  max-width: 320px;
-  min-height: 320px;
-  background: #f5f7ff;
-  transition: background-image 0.5s ease;
-}
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        padding: 20px;
+        margin: 10px auto;
+        max-width: 320px;
+        min-height: 320px;
+        background: #f5f7ff;
+        transition: background-image 0.5s ease;
+      }
 
-.timer-bg-container .timer-wrap {
-  position: relative;
-  z-index: 2;
-}
+      .timer-bg-container .timer-wrap {
+        position: relative;
+        z-index: 2;
+      }
 
-/* SVG shadow effect when background is present */
-.timer-bg-container.has-bg circle {
-  fill: rgba(255, 255, 255, 0.75) !important;
-  stroke: rgba(255, 255, 255, 0.9) !important;
-  stroke-width: 3 !important;
-}
+      /* SVG shadow effect when background is present */
+      .timer-bg-container.has-bg circle {
+        fill: rgba(255, 255, 255, 0.75) !important;
+        stroke: rgba(255, 255, 255, 0.9) !important;
+        stroke-width: 3 !important;
+      }
 
-.timer-bg-container.has-bg #dots circle {
-  fill: rgba(255, 255, 255, 0.7) !important;
-}
+      .timer-bg-container.has-bg #dots circle {
+        fill: rgba(255, 255, 255, 0.7) !important;
+      }
 
-.timer-bg-container.has-bg #progress {
-  stroke: rgba(43, 75, 255, 0.9) !important;
-  filter: drop-shadow(0 0 6px rgba(43, 75, 255, 0.3));
-}
+      .timer-bg-container.has-bg #progress {
+        stroke: rgba(43, 75, 255, 0.9) !important;
+        filter: drop-shadow(0 0 6px rgba(43, 75, 255, 0.3));
+      }
 
-.timer-bg-container.has-bg #timerText {
-  fill: #fff !important;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-}
+      .timer-bg-container.has-bg #timerText {
+        fill: #fff !important;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      }
 
-.timer-bg-container.has-bg #timerLabel {
-  fill: rgba(255,255,255,0.9) !important;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.4);
-}
+      .timer-bg-container.has-bg #timerLabel {
+        fill: rgba(255, 255, 255, 0.9) !important;
+        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+      }
 
-/* Background image styles */
-.bg-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
-}
+      /* Background image styles */
+      .bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: 1;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+      }
 
-.bg-image.visible {
-  opacity: 1;
-}
+      .bg-image.visible {
+        opacity: 1;
+      }
 
-/* Overlay for better text readability */
-.bg-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
-}
+      /* Overlay for better text readability */
+      .bg-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.2);
+        z-index: 1;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+      }
 
-.bg-overlay.visible {
-  opacity: 1;
-}
+      .bg-overlay.visible {
+        opacity: 1;
+      }
     </style>
   </head>
   <body>
     <video
       id="wakelock-video"
-      src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAABzVtZGF03gIATGF2YzYy
-LjI4LjEwMgACMEAOAAACYwYF//9f3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCAtIEgu
-MjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMjQgLSBodHRwOi8vd3d3LnZp
-ZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTow
-OjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4w
-MCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAg
-Y3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhy
-ZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRl
-PTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFt
-ZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJh
-X3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21w
-PTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACA
-AAAACmWIhAzyYoAAt94BGCAHARggBwAAAAVBmjgZ6gEYIAcBGCAHAAAABkGaVAZ6gAEYIAcBGCAH
-AAAABUGaYDPUARggBwAAAAVBmoAz1AEYIAcBGCAHAAAABUGaoDPUARggBwEYIAcAAAAFQZrAM9QB
-GCAHARggBwAAAAVBmuAz1AEYIAcAAAAFQZsAM9QBGCAHARggBwAAAAVBmyAz1AEYIAcBGCAHAAAA
-BUGbQDPUARggBwAAAAVBm2Az1AEYIAcBGCAHAAAABUGbgDPUARggBwEYIAcAAAAFQZugM9QBGCAH
-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"
+      src="data:video/mp4;base64,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AAAAAgAAAIIAAAQAAAAAAQAAAMwAAAIIc3RzYwAAAAAAAAAqAAAAAQAAAAEAAAABAAAAAgAAAAIAAAABAAAABQAAAAEAAAABAAAABgAAAAIAAAABAAAACQAAAAEAAAABAAAACgAAAAIAAAABAAAADAAAAAEAAAABAAAADQAAAAIAAAABAAAAEAAAAAEAAAABAAAAEQAAAAIAAAABAAAAFAAAAAEAAAABAAAAFQAAAAIAAAABAAAAFwAAAAEAAAABAAAAGAAAAAIAAAABAAAAGwAAAAEAAAABAAAAHAAAAAIAAAABAAAAHgAAAAEAAAABAAAAHwAAAAIAAAABAAAAIgAAAAEAAAABAAAAIwAAAAIAAAABAAAAJgAAAAEAAAABAAAAJwAAAAIAAAABAAAAKQAAAAEAAAABAAAAKgAAAAIAAAABAAAALQAAAAEAAAABAAAALgAAAAIAAAABAAAAMAAAAAEAAAABAAAAMQAAAAIAAAABAAAANAAAAAEAAAABAAAANQAAAAIAAAABAAAAOAAAAAEAAAABAAAAOQAAAAIAAAABAAAAOwAAAAEAAAABAAAAPAAAAAIAAAABAAAAPwAAAAEAAAABAAAAQAAAAAIAAAABAAAAQgAAAAEAAAABAAAAQwAAAAIAAAABAAAARgAAAAEAAAABAAAARwAAAAIAAAABAAAASgAAAAEAAAABAAAASwAAAAIAAAABAAACIHN0c3oAAAAAAAAAAAAAAIMAAAAVAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAUBzdGNvAAAAAAAAAEwAAAAwAAACugAAAssAAALdAAAC7gAAAvsAAAMMAAADHQAAAy4AAAM7AAADTAAAA10AAANqAAADewAAA4wAAAOdAAADqgAAA7sAAAPMAAAD3QAAA+oAAAP7AAAEDAAABBkAAAQqAAAEOwAABEwAAARZAAAEagAABHsAAASIAAAEmQAABKoAAAS7AAAEyAAABNkAAATqAAAE+wAABQgAAAUZAAAFKgAABTcAAAVIAAAFWQAABWoAAAV3AAAFiAAABZkAAAWmAAAFtwAABcgAAAXZAAAF5gAABfcAAAYIAAAGGQAABiYAAAY3AAAGSAAABlUAAAZmAAAGdwAABogAAAaVAAAGpgAABrcAAAbEAAAG1QAABuYAAAb3AAAHBAAABxUAAAcmAAAHNwAAB0QAAAdVAAAAGnNncGQBAAAAcm9sbAAAAAIAAAAB//8AAAAcc2JncAAAAAByb2xsAAAAAQAAAIMAAAABAAAAYnVkdGEAAABabWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAtaWxzdAAAACWpdG9vAAAAHWRhdGEAAAABAAAAAExhdmY2Mi4xMi4xMDI="
       loop
       muted
       playsinline
@@ -336,75 +261,98 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
       <table class="tab-head">
         <tr>
           <td>
-            <button id="prevBtn" type="button">⏮️</button>
+            <button id="prevBtn">⏮️</button>
           </td>
           <td>
             <div class="task-name" id="taskName">Jumping Jacks</div>
             <div class="schedule-info" id="scheduleInfo">Task 1 of 5</div>
           </td>
           <td>
-            <button id="nextBtn" type="button">⏭️</button>
+            <button id="nextBtn">⏭️</button>
           </td>
         </tr>
       </table>
-<div id="timerBackground" class="timer-bg-container">
-  <div class="timer-wrap">
-    <svg width="280" height="280" viewBox="0 0 280 280">
-      <circle
-        cx="140"
-        cy="140"
-        r="130"
-        fill="rgba(255,255,255,0.85)"
-        stroke="#eef0ff"
-        stroke-width="2"
-      ></circle>
-      <g id="dots"></g>
-      <path
-        id="progress"
-        fill="none"
-        stroke="#2b4bff"
-        stroke-width="6"
-        stroke-linecap="round"
-      ></path>
-      <!-- Timer text inside SVG -->
-      <text id="timerText" x="140" y="125" text-anchor="middle" font-family="monospace" font-size="36" fill="#000">
-        00:00:00
-      </text>
-      <text id="timerLabel" x="140" y="165" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#888">
-        Remaining
-      </text>
-    </svg>
-  </div>
-</div>
+      <div id="timerBackground" class="timer-bg-container">
+        <div class="timer-wrap">
+          <svg width="280" height="280" viewBox="0 0 280 280">
+            <circle
+              cx="140"
+              cy="140"
+              r="130"
+              fill="rgba(255,255,255,0.85)"
+              stroke="#eef0ff"
+              stroke-width="2"
+            ></circle>
+            <g id="dots"></g>
+            <path
+              id="progress"
+              fill="none"
+              stroke="#2b4bff"
+              stroke-width="6"
+              stroke-linecap="round"
+            ></path>
+            <!-- Timer text inside SVG -->
+            <text
+              id="timerText"
+              x="140"
+              y="125"
+              text-anchor="middle"
+              font-family="monospace"
+              font-size="36"
+              fill="#000"
+            >
+              00:00:00
+            </text>
+            <text
+              id="timerLabel"
+              x="140"
+              y="165"
+              text-anchor="middle"
+              font-family="Arial, sans-serif"
+              font-size="14"
+              fill="#888"
+            >
+              Remaining
+            </text>
+          </svg>
+        </div>
+      </div>
       <div class="btns">
-        <button id="startPauseBtn" type="button">▶ Start</button>
-        <button id="resetBtn" type="button">🔄 Reset</button>
-        <button id="reloadBtn" type="button">🔃 Reload</button>
+        <button id="startPauseBtn">▶ Start</button>
+        <button id="resetBtn">🔄 Reset</button>
+        <button id="reloadBtn">🔃 Reload</button>
       </div>
 
       <div class="adjust-btns">
-  <div class="adjust-group">
-    <button id="sub30Btn" type="button">-30</button>
-    <button id="sub10Btn" type="button">-10</button>
-    <button id="sub5Btn" type="button">-5</button>
-    <span class="adjust-separator">|</span>
-    <button id="add5Btn" type="button">+5</button>
-    <button id="add10Btn" type="button">+10</button>
-    <button id="add30Btn" type="button">+30</button>
-  </div>
-  <div class="adjust-units">
-    <label><input type="radio" name="adjustUnit" value="sec" checked> Sec</label>
-    <label><input type="radio" name="adjustUnit" value="min"> Min</label>
-    <label><input type="radio" name="adjustUnit" value="hour"> Hr</label>
-  </div>
-</div>
+        <div class="adjust-group">
+          <button id="sub30Btn">-30</button>
+          <button id="sub10Btn">-10</button>
+          <button id="sub5Btn">-5</button>
+          <span class="adjust-separator">|</span>
+          <button id="add5Btn">+5</button>
+          <button id="add10Btn">+10</button>
+          <button id="add30Btn">+30</button>
+        </div>
+        <div class="adjust-units">
+          <label
+            ><input type="radio" name="adjustUnit" value="sec" checked />
+            Sec</label
+          >
+          <label
+            ><input type="radio" name="adjustUnit" value="min" /> Min</label
+          >
+          <label
+            ><input type="radio" name="adjustUnit" value="hour" /> Hr</label
+          >
+        </div>
+      </div>
 
       <div class="status status-idle" id="statusDisplay">⏳ Ready</div>
-    <div id="logPanel" class="log-panel">
-      <div class="log-entry">🎯 Activity Scheduler Ready</div>
+      <div id="logPanel" class="log-panel">
+        <div class="log-entry">🎯 Activity Scheduler Ready</div>
+      </div>
     </div>
-
-    <script data-id="fullProgram" type="text/javascript">
+    <script data-id="fullProgram">
       // ==================== ES5 SAFE - ANDROID 4.4.2 COMPATIBLE ====================
 
       // ==================== DEFAULT JSON ====================
@@ -414,7 +362,7 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
           defaultLang: "en-US",
           background: { imageId: "", soundId: "" },
           logUtterances: false,
-          announceCompleted: true,
+          announceCompleted: true
         },
         tasks: {
           task_1781024104881_10816: {
@@ -426,27 +374,27 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
               enabled: true,
               everySeconds: "10",
               fromStart: "10",
-              toEnd: "",
+              toEnd: ""
             },
             left: {
               enabled: false,
               everySeconds: "10",
               fromStart: "",
-              toEnd: "",
+              toEnd: ""
             },
             actions: {
               action_1781024206838_30386: {
                 type: "msg",
                 timingSeconds: "5",
-                payload: { text: "Keep going!", lang: "en-US" },
-              },
+                payload: { text: "Keep going!", lang: "en-US" }
+              }
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           task_1781024223949_89640: {
             name: "Rest",
@@ -457,30 +405,30 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
               enabled: false,
               everySeconds: "10",
               fromStart: "",
-              toEnd: "",
+              toEnd: ""
             },
             left: {
               enabled: true,
               everySeconds: "10",
               fromStart: "",
-              toEnd: "",
+              toEnd: ""
             },
             end: {
               playTicks: false,
               tickCount: "1",
               beep: true,
-              announceCompleted: true,
-            },
-          },
+              announceCompleted: true
+            }
+          }
         },
         schedule: {
           1: { taskId: "task_1781024104881_10816", repeat: "1" },
           2: { taskId: "task_1781024223949_89640", repeat: "2" },
-          3: { taskId: "task_1781024104881_10816", repeat: "1" },
-        },
+          3: { taskId: "task_1781024104881_10816", repeat: "1" }
+        }
       };
     </script>
-    <script type="text/javascript">
+    <script>
       // ==================== GLOBALS ====================
       var svgNS = "http://www.w3.org/2000/svg";
       var dotsGroup = document.getElementById("dots");
@@ -506,9 +454,9 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
       //var prevBtn = document.getElementById("prevBtn");
       //var nextBtn = document.getElementById("nextBtn");
       var unitRadios = document.querySelectorAll('input[name="adjustUnit"]');
-var adjustButtons = document.querySelectorAll('.adjust-group button');
-var adjustLabels = document.querySelectorAll('.adjust-units label');
-     
+      var adjustButtons = document.querySelectorAll(".adjust-group button");
+      var adjustLabels = document.querySelectorAll(".adjust-units label");
+
       //===
       var wakeLock = null,
         locked = false;
@@ -565,12 +513,6 @@ var adjustLabels = document.querySelectorAll('.adjust-units label');
 
       function playVideoFallback() {
         if (videoElement) {
-          // Android 4.4 requires a tiny base64 video or a blank stream to run smoothly without breaking
-          if (!videoElement.src || videoElement.src === "about:blank") {
-            // A 1-pixel transparent blank mp4 video snippet
-            videoElement.src =
-              "data:video/mp4;base64,AAAAHGZ0eXBtcDQyAAAAAG1wStandardBlankVideoData...";
-          }
           try {
             videoElement.play();
           } catch (e) {}
@@ -580,44 +522,59 @@ var adjustLabels = document.querySelectorAll('.adjust-units label');
       // 3. Visibility Change Event Listener (Android 4.4 safe)
       document.addEventListener("visibilitychange", function () {
         if (document.hidden) {
-          // User quit or minimized window -> release and pause everything
-          if (locked) //pauseTimer(); //unlock();
-          if (Scheduler.isRunning() && !Scheduler.isPaused()) startPauseBtn.click();
+          var shouldPause =
+            fullProgram &&
+            fullProgram.main &&
+            fullProgram.main.pauseOnHidden &&
+            fullProgram.main.pauseOnHidden == true;
+
+          if (shouldPause) {
+            // User enabled it -> pause everything
+            if (Scheduler.isRunning() && !Scheduler.isPaused()) {
+              startPauseBtn.click();
+            }
+          } else {
+            // User disabled it -> Do nothing, let it keep running!
+          }
         } else {
-          // User came back -> Note: Android 4.4 requires user interaction
-          // to resume video play, so call your click-to-resume trigger here.
+          // User returned to the app -> Add log entry in preferred language:
+          // English:
           addLogEntry("⏸️ Waiting for user to click resume...");
+          // French:
+          // addLogEntry("⏸️ En attente d'un clic pour reprendre...");
+          // Arabic:
+          // addLogEntry("⏸️ في انتظار نقر المستخدم للاستئناف...");
         }
       });
       function preInitSpeech() {
-  try {
-    if (window.speechSynthesis) {
-      var dummy = new SpeechSynthesisUtterance(' ');
-      dummy.lang = defLang || 'en-US';
-      dummy.volume = 0;
-      dummy.rate = 1;
-      dummy.pitch = 1;
-      
-      dummy.onstart = function() {
-        window.speechSynthesis.cancel();
-      };
-      dummy.onend = function() {
-        window.speechSynthesis.cancel();
-      };
-      
-      // Speak then immediately cancel
-      window.speechSynthesis.speak(dummy);
-      window.speechSynthesis.cancel();
-      
-      addLogEntry('🎤 Speech synthesis pre-initialized');
-    }
-  } catch(e) {
-    // Silently fail - speech synthesis may not be available
-  }
-}
-document.addEventListener('DOMContentLoaded', function() {
-  preInitSpeech();
-});
+        try {
+          if (window.speechSynthesis) {
+            var dummy = new SpeechSynthesisUtterance(" ");
+            dummy.lang = defLang || "en-US";
+            dummy.volume = 0;
+            dummy.rate = 1;
+            dummy.pitch = 1;
+
+            dummy.onstart = function () {
+              window.speechSynthesis.cancel();
+            };
+            dummy.onend = function () {
+              window.speechSynthesis.cancel();
+            };
+
+            // Speak then immediately cancel
+            window.speechSynthesis.speak(dummy);
+            window.speechSynthesis.cancel();
+
+            addLogEntry("🎤 Speech synthesis pre-initialized");
+          }
+        } catch (e) {
+          // Silently fail - speech synthesis may not be available
+        }
+      }
+      document.addEventListener("DOMContentLoaded", function () {
+        preInitSpeech();
+      });
       // ==================== AUDIO ENGINE (untouched) ====================
 
       function AuEngine() {
@@ -756,6 +713,8 @@ document.addEventListener('DOMContentLoaded', function() {
             this.currentAudio.pause();
           } catch (e) {}
         }
+        this.duckCount = 0;
+        this.isDucked = false;
       };
 
       AuEngine.prototype.resumeAll = function () {
@@ -876,83 +835,83 @@ document.addEventListener('DOMContentLoaded', function() {
         "total duration": {
           en: "total duration",
           fr: "durée totale",
-          ar: "المدة الإجمالية",
+          ar: "المدة الإجمالية"
         },
         "current time": {
           en: "current time",
           fr: "l'heure actuelle",
-          ar: "الوقت الحالي",
+          ar: "الوقت الحالي"
         },
         "next task": {
           en: "next task",
           fr: "tâche suivante",
-          ar: "المهمةُ المواليةُ",
+          ar: "المهمةُ المواليةُ"
         },
         started: { en: "started", fr: "commencée", ar: "بدأتْ" },
         completed: { en: "completed", fr: "terminée", ar: 'اكتملت"' },
         paused: { en: "paused", fr: "", ar: "" },
         resumed: { en: "resumed", fr: "", ar: "" },
-        reset: { en: "reset", fr: "", ar: "" },
+        reset: { en: "reset", fr: "", ar: "" }
       };
 
       var speechTemplate = {
         "total duration": {
           en: "Total duration {time}",
           fr: "Durée totale {time}",
-          ar: "المدة الإجمالية {time}",
+          ar: "المدة الإجمالية {time}"
         },
         "time left": {
           en: "{time} left",
           fr: "{time} restantes",
-          ar: "بقيت {time}",
+          ar: "بقيت {time}"
         },
         "time elapsed": {
           en: "{time} elapsed",
           fr: "{time} écoulées",
-          ar: "انقضت {time}",
+          ar: "انقضت {time}"
         },
         // --- New Additions ---
         "task started": {
           en: "{task} started",
           fr: "Début de {task}", // Cleaner for audio than "{task} a commencé"
-          ar: "بدأت {task}",
+          ar: "بدأت {task}"
         },
         "task completed": {
           en: "{task} completed",
           fr: "{task} terminée",
-          ar: "تمت {task}",
+          ar: "تمت {task}"
         },
         "all tasks completed": {
           en: "All tasks in {activity} completed",
           fr: "Toutes les tâches de {activity} sont terminées",
-          ar: "اكتملت جميع المهام في {activity}",
+          ar: "اكتملت جميع المهام في {activity}"
         },
         "next task": {
           en: "Next task, {task}",
           fr: "Tâche suivante, {task}",
-          ar: "المهمةُ المواليةُ: {task}",
+          ar: "المهمةُ المواليةُ: {task}"
         },
         "current time": {
           en: "Current time, {time}",
           fr: "Il est {time}", // Native way to state time ("Il est 14 heures")
-          ar: "الساعةُ الآنَ {time}",
+          ar: "الساعةُ الآنَ {time}"
         },
         // --- Missing essentials for timing sequences ---
         "task paused": {
           en: "{task} paused",
           fr: "{task} en pause",
-          ar: "تم إيقاف {task} مؤقتًا",
+          ar: "تم إيقاف {task} مؤقتًا"
         },
         "task resumed": {
           en: "{task} resumed",
           fr: "Reprise de {task}",
-          ar: "استئناف {task}",
+          ar: "استئناف {task}"
         },
         "upcoming alert": {
           en: "Get ready for {task}",
           fr: "Préparez-vous pour {task}",
-          ar: "استعد لـ {task}",
-        },
+          ar: "استعد لـ {task}"
+        }
       };
 
       function getLabel(label, lang) {
@@ -1024,7 +983,7 @@ document.addEventListener('DOMContentLoaded', function() {
       function polarToCartesian(cx, cy, r, angle) {
         return {
           x: cx + r * Math.cos(angle),
-          y: cy + r * Math.sin(angle),
+          y: cy + r * Math.sin(angle)
         };
       }
 
@@ -1112,62 +1071,62 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
       function updateBackgroundImage(imageId) {
-  var container = document.getElementById('timerBackground');
-  if (!container) return;
-  
-  // Remove existing background elements
-  var existingBg = container.querySelector('.bg-image');
-  var existingOverlay = container.querySelector('.bg-overlay');
-  if (existingBg) existingBg.remove();
-  if (existingOverlay) existingOverlay.remove();
-  
-  if (!imageId) {
-    container.classList.remove('has-bg');
-    container.style.background = '#f5f7ff';
-    return;
-  }
-  
-  var imageObj = getImageById(imageId);
-  if (imageObj && imageObj.src) {
-    // Create background image element
-    var bgDiv = document.createElement('div');
-    bgDiv.className = 'bg-image visible';
-    bgDiv.style.backgroundImage = 'url(' + imageObj.src + ')';
-    bgDiv.style.backgroundSize = 'contain';
-    bgDiv.style.backgroundPosition = 'center';
-    bgDiv.style.backgroundRepeat = 'no-repeat';
-    
-    // Create overlay for readability
-    var overlay = document.createElement('div');
-    overlay.className = 'bg-overlay visible';
-    
-    // Insert at the beginning of container
-    container.insertBefore(overlay, container.firstChild);
-    container.insertBefore(bgDiv, container.firstChild);
-    
-    // Add class for styling
-    container.classList.add('has-bg');
-    container.style.background = 'transparent';
-    
-    // Ensure SVG elements have shadow effects
-    addLogEntry('🖼️ Background image loaded: ' + imageId);
-  } else {
-    container.classList.remove('has-bg');
-    container.style.background = '#f5f7ff';
-  }
-}
-function clearBackground() {
-  var container = document.getElementById('timerBackground');
-  if (!container) return;
-  
-  var bgDiv = container.querySelector('.bg-image');
-  var overlay = container.querySelector('.bg-overlay');
-  if (bgDiv) bgDiv.remove();
-  if (overlay) overlay.remove();
-  
-  container.classList.remove('has-bg');
-  container.style.background = '#f5f7ff';
-}
+        var container = document.getElementById("timerBackground");
+        if (!container) return;
+
+        // Remove existing background elements
+        var existingBg = container.querySelector(".bg-image");
+        var existingOverlay = container.querySelector(".bg-overlay");
+        if (existingBg) existingBg.remove();
+        if (existingOverlay) existingOverlay.remove();
+
+        if (!imageId) {
+          container.classList.remove("has-bg");
+          container.style.background = "#f5f7ff";
+          return;
+        }
+
+        var imageObj = getImageById(imageId);
+        if (imageObj && imageObj.src) {
+          // Create background image element
+          var bgDiv = document.createElement("div");
+          bgDiv.className = "bg-image visible";
+          bgDiv.style.backgroundImage = "url(" + imageObj.src + ")";
+          bgDiv.style.backgroundSize = "contain";
+          bgDiv.style.backgroundPosition = "center";
+          bgDiv.style.backgroundRepeat = "no-repeat";
+
+          // Create overlay for readability
+          var overlay = document.createElement("div");
+          overlay.className = "bg-overlay visible";
+
+          // Insert at the beginning of container
+          container.insertBefore(overlay, container.firstChild);
+          container.insertBefore(bgDiv, container.firstChild);
+
+          // Add class for styling
+          container.classList.add("has-bg");
+          container.style.background = "transparent";
+
+          // Ensure SVG elements have shadow effects
+          addLogEntry("🖼️ Background image loaded: " + imageId);
+        } else {
+          container.classList.remove("has-bg");
+          container.style.background = "#f5f7ff";
+        }
+      }
+      function clearBackground() {
+        var container = document.getElementById("timerBackground");
+        if (!container) return;
+
+        var bgDiv = container.querySelector(".bg-image");
+        var overlay = container.querySelector(".bg-overlay");
+        if (bgDiv) bgDiv.remove();
+        if (overlay) overlay.remove();
+
+        container.classList.remove("has-bg");
+        container.style.background = "#f5f7ff";
+      }
 
       // ==================== TTS ====================
       function tts(txt, lang, cb) {
@@ -1193,6 +1152,12 @@ function clearBackground() {
       }
 
       function clearTTS() {
+        // 1. App Layer Bridge Hook
+        if (typeof Android !== "undefined" && Android.stopNativeTTS) {
+          Android.stopNativeTTS();
+        }
+
+        // 2. Standard Web Browser Fallback
         if ("speechSynthesis" in window) {
           speechSynthesis.cancel();
           AudioEngine.duck(false);
@@ -1211,65 +1176,69 @@ function clearBackground() {
         if (!audioObj || !audioObj.src) return;
         AudioEngine.playSound(audioObj.src);
       }
-      
+
       function updateDisplay(totalMs, remainingMs) {
-  var remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
-  var elapsedSec = Math.max(0, Math.floor((totalMs - remainingMs) / 1000));
+        var remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
+        var elapsedSec = Math.max(
+          0,
+          Math.floor((totalMs - remainingMs) / 1000)
+        );
 
-  var hours = Math.floor(remainingSec / 3600);
-  var mins = Math.floor((remainingSec % 3600) / 60);
-  var secs = remainingSec % 60;
-  
-  // Format time string
-  var timeStr = pad2(hours) + ":" + pad2(mins) + ":" + pad2(secs);
-  
-  // Update SVG text elements
-  var timerTextEl = document.getElementById('timerText');
-  var timerLabelEl = document.getElementById('timerLabel');
-  
-  if (timerTextEl) {
-    timerTextEl.textContent = timeStr;
-  }
-  
-  if (timerLabelEl) {
-    timerLabelEl.textContent = timerMode === "remaining" ? "Remaining" : "Elapsed";
-  }
+        var hours = Math.floor(remainingSec / 3600);
+        var mins = Math.floor((remainingSec % 3600) / 60);
+        var secs = remainingSec % 60;
 
-  // Update SVG progress circle
-  var pct = totalMs > 0 ? (totalMs - remainingMs) / totalMs : 0;
-  if (timerMode === "remaining") {
-    var remainingPct = 1 - pct;
-    if (remainingPct > 0 && remainingPct < 1) {
-      var endAngle = -Math.PI / 2 + remainingPct * 2 * Math.PI;
-      progressPath.setAttribute(
-        "d",
-        describeArc(140, 140, 120, -Math.PI / 2, endAngle),
-      );
-    } else if (remainingPct >= 1) {
-      progressPath.setAttribute(
-        "d",
-        describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5),
-      );
-    } else {
-      progressPath.setAttribute("d", "");
-    }
-  } else {
-    if (pct > 0 && pct < 1) {
-      var endAngleElapsed = -Math.PI / 2 + pct * 2 * Math.PI;
-      progressPath.setAttribute(
-        "d",
-        describeArc(140, 140, 120, -Math.PI / 2, endAngleElapsed),
-      );
-    } else if (pct >= 1) {
-      progressPath.setAttribute(
-        "d",
-        describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5),
-      );
-    } else {
-      progressPath.setAttribute("d", "");
-    }
-  }
-}
+        // Format time string
+        var timeStr = pad2(hours) + ":" + pad2(mins) + ":" + pad2(secs);
+
+        // Update SVG text elements
+        var timerTextEl = document.getElementById("timerText");
+        var timerLabelEl = document.getElementById("timerLabel");
+
+        if (timerTextEl) {
+          timerTextEl.textContent = timeStr;
+        }
+
+        if (timerLabelEl) {
+          timerLabelEl.textContent =
+            timerMode === "remaining" ? "Remaining" : "Elapsed";
+        }
+
+        // Update SVG progress circle
+        var pct = totalMs > 0 ? (totalMs - remainingMs) / totalMs : 0;
+        if (timerMode === "remaining") {
+          var remainingPct = 1 - pct;
+          if (remainingPct > 0 && remainingPct < 1) {
+            var endAngle = -Math.PI / 2 + remainingPct * 2 * Math.PI;
+            progressPath.setAttribute(
+              "d",
+              describeArc(140, 140, 120, -Math.PI / 2, endAngle)
+            );
+          } else if (remainingPct >= 1) {
+            progressPath.setAttribute(
+              "d",
+              describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5)
+            );
+          } else {
+            progressPath.setAttribute("d", "");
+          }
+        } else {
+          if (pct > 0 && pct < 1) {
+            var endAngleElapsed = -Math.PI / 2 + pct * 2 * Math.PI;
+            progressPath.setAttribute(
+              "d",
+              describeArc(140, 140, 120, -Math.PI / 2, endAngleElapsed)
+            );
+          } else if (pct >= 1) {
+            progressPath.setAttribute(
+              "d",
+              describeArc(140, 140, 120, -Math.PI / 2, Math.PI * 1.5)
+            );
+          } else {
+            progressPath.setAttribute("d", "");
+          }
+        }
+      }
       // ==================== SCHEDULER ENGINE ====================
       var Scheduler = (function () {
         var running = false;
@@ -1306,14 +1275,14 @@ function clearBackground() {
           if (tickCallback) tickCallback(totalMs, remainingMs);
 
           //=== option 1===
-          
-          if (secQueu != remainingSec) {
-            secQueu = remainingSec;
+
+          if (secQueu != remainingSec || secQueu == -1) {
+            secQueu = secQueu == -1 ? totalMs / 1000 : remainingSec;
             for (var i = 0; i < actionList.length; i++) {
               if (actionList[i].sec === secQueu) {
                 stack.push({
                   fn: actionList[i].fn,
-                  params: actionList[i].params,
+                  params: actionList[i].params
                 });
               }
             }
@@ -1419,7 +1388,7 @@ function clearBackground() {
           },
           getTotalSeconds: function () {
             return Math.floor(totalMs / 1000);
-          },
+          }
         };
       })();
 
@@ -1436,17 +1405,17 @@ function clearBackground() {
               currentActionsList.push({
                 sec: sec,
                 fn: fn,
-                params: params || [],
+                params: params || []
               });
             }
           }
           //===bg===
           addAction(total, updateBackgroundImage, [
-            task.background.imageId || fullProgram.main.background.imageId,
+            task.background.imageId || fullProgram.main.background.imageId
           ]);
           addAction(0, clearBackground, []);
           addAction(total, playBackgroundSound, [
-            task.background.soundId || fullProgram.main.background.soundId,
+            task.background.soundId || fullProgram.main.background.soundId
           ]);
           addAction(0, stopBackgroundSound, []);
 
@@ -1463,7 +1432,7 @@ function clearBackground() {
             addAction(total - 1, function () {
               var t = getSpeech("total duration").replace(
                 "{time}",
-                formatTimeHMForSpeech(total),
+                formatTimeHMForSpeech(total)
               );
               tts(t, defLang);
             });
@@ -1516,7 +1485,7 @@ function clearBackground() {
                         return function () {
                           tts(text, lang);
                         };
-                      })(action.payload.text, action.payload.lang || "en-US"),
+                      })(action.payload.text, action.payload.lang || "en-US")
                     );
                   } else if (action.type === "snd") {
                     addAction(
@@ -1525,7 +1494,7 @@ function clearBackground() {
                         return function () {
                           playSoundById(soundId);
                         };
-                      })(action.payload.soundId),
+                      })(action.payload.soundId)
                     );
                   } else if (action.type === "count") {
                     var start = parseFloat(action.payload.start || 0);
@@ -1569,7 +1538,7 @@ function clearBackground() {
                           return function () {
                             announceElapsed(s);
                           };
-                        })(sec),
+                        })(sec)
                       );
                     } else if (value === "left") {
                       addAction(
@@ -1578,7 +1547,7 @@ function clearBackground() {
                           return function () {
                             announceLeft(total - s);
                           };
-                        })(sec),
+                        })(sec)
                       );
                     } else if (value === "beep") {
                       addAction(total - sec, function () {
@@ -1616,7 +1585,7 @@ function clearBackground() {
               if (task.end.announceCompleted) {
                 var t = getSpeech("task completed").replace(
                   "{task}",
-                  task.name,
+                  task.name
                 );
                 tts(t, defLang);
               }
@@ -1675,21 +1644,21 @@ function clearBackground() {
           parts.push(
             lang == "ar"
               ? getArabicTimeUnit(hours, "hour")
-              : hours + " " + getLabel("hour" + (hours > 1 ? "s" : ""), lang),
+              : hours + " " + getLabel("hour" + (hours > 1 ? "s" : ""), lang)
           );
         }
         if (mins > 0) {
           parts.push(
             lang == "ar"
               ? getArabicTimeUnit(mins, "minute")
-              : mins + " " + getLabel("minute" + (mins > 1 ? "s" : ""), lang),
+              : mins + " " + getLabel("minute" + (mins > 1 ? "s" : ""), lang)
           );
         }
         if (secs > 0 || parts.length === 0) {
           parts.push(
             lang == "ar"
               ? getArabicTimeUnit(secs, "second")
-              : secs + " " + getLabel("second" + (secs > 1 ? "s" : ""), lang),
+              : secs + " " + getLabel("second" + (secs > 1 ? "s" : ""), lang)
           );
         }
 
@@ -1773,7 +1742,7 @@ function clearBackground() {
             9: "التاسعة",
             10: "العاشرة",
             11: "الحادية عشرة",
-            12: "الثانية عشرة",
+            12: "الثانية عشرة"
           };
           arHour = hourMap[hour12];
 
@@ -1814,7 +1783,7 @@ function clearBackground() {
       function announceElapsed(seconds) {
         var t = getSpeech("time elapsed").replace(
           "{time}",
-          formatTimeHMForSpeech(seconds),
+          formatTimeHMForSpeech(seconds)
         );
         tts(t, defLang);
       }
@@ -1822,7 +1791,7 @@ function clearBackground() {
       function announceLeft(seconds) {
         var t = getSpeech("time left").replace(
           "{time}",
-          formatTimeHMForSpeech(seconds),
+          formatTimeHMForSpeech(seconds)
         );
         tts(t, defLang);
       }
@@ -1835,7 +1804,7 @@ function clearBackground() {
         if (program.schedule) {
           for (var pos in program.schedule) {
             var item = program.schedule[pos];
-            if (item.taskId && program.tasks && program.tasks[item.taskId]){
+            if (item.taskId && program.tasks && program.tasks[item.taskId]) {
               hasSchedule = true;
               if (!item.repeat || parseInt(item.repeat, 10) < 1) {
                 item.repeat = "1";
@@ -1843,9 +1812,11 @@ function clearBackground() {
             } else delete program.schedule[pos];
           }
           if (hasSchedule) {
-            var sortedKeys = Object.keys(program.schedule).sort(function(a, b) {
-              return parseInt(a, 10) - parseInt(b, 10);
-            });
+            var sortedKeys = Object.keys(program.schedule).sort(
+              function (a, b) {
+                return parseInt(a, 10) - parseInt(b, 10);
+              }
+            );
             var newSchedule = {};
             var counter = 1;
             for (var i = 0; i < sortedKeys.length; i++) {
@@ -1862,7 +1833,7 @@ function clearBackground() {
             program.schedule[n++] = { taskId: i, repeat: "1" };
           }
           addLogEntry(
-            "📝 Auto-created schedule: " + program.tasks.length + " tasks",
+            "📝 Auto-created schedule: " + program.tasks.length + " tasks"
           );
         }
         if (program && program.main && program.main.defaultLang) {
@@ -1927,51 +1898,52 @@ function clearBackground() {
             currentTask.name +
             " (" +
             formatTimeHMForSpeech(currentTaskTotalSeconds) +
-            ")",
+            ")"
         );
         return true;
       }
 
       // ==================== TIMER CONTROL ====================
       // Single toggle button handler
-      function resetSVG(){
-          // Reset SVG to initial state (empty circle)
-    progressPath.setAttribute('d', '');
-    
-    // Reset timer display
-    var timeStr = '00:00:00';
-    var timerTextEl = document.getElementById('timerText');
-    if (timerTextEl) timerTextEl.textContent = timeStr;
-    //var timerLabelEl = document.getElementById('timerLabel');
-    //if (timerLabelEl) timerLabelEl.textContent = 'Remaining';
+      function resetSVG() {
+        // Reset SVG to initial state (empty circle)
+        progressPath.setAttribute("d", "");
 
-}
-function resetStartPauseBtn(){
-  startPauseBtn.innerHTML = '▶ Start';
-  startPauseBtn.style.background = '#2b4bff';
-  startPauseBtn.dataset.control='start';
-  
-  setAdjustControlsEnabled()
-}
-document.getElementById('startPauseBtn').addEventListener('click', function() {
-    var btn = this;
-    if(!btn.dataset.control)btn.dataset.control='start';
-    var state =btn.dataset.control;
-    if(state=='start'){
-      state=startTimer();
-      if(state){
-        btn.innerHTML = '⏸ Pause';
-        btn.style.background = '#f59e0b'; // Orange for pause
-        btn.dataset.control='pause'
-        setAdjustControlsEnabled(true);
-        return
+        // Reset timer display
+        var timeStr = "00:00:00";
+        var timerTextEl = document.getElementById("timerText");
+        if (timerTextEl) timerTextEl.textContent = timeStr;
+        //var timerLabelEl = document.getElementById('timerLabel');
+        //if (timerLabelEl) timerLabelEl.textContent = 'Remaining';
       }
-    } else {
-      pauseTimer();
-    }
-    resetStartPauseBtn()
-});
-reloadBtn.onclick=reloadProgram;
+      function resetStartPauseBtn() {
+        startPauseBtn.innerHTML = "▶ Start";
+        startPauseBtn.style.background = "#2b4bff";
+        startPauseBtn.dataset.control = "start";
+
+        setAdjustControlsEnabled();
+      }
+      document
+        .getElementById("startPauseBtn")
+        .addEventListener("click", function () {
+          var btn = this;
+          if (!btn.dataset.control) btn.dataset.control = "start";
+          var state = btn.dataset.control;
+          if (state == "start") {
+            state = startTimer();
+            if (state) {
+              btn.innerHTML = "⏸ Pause";
+              btn.style.background = "#f59e0b"; // Orange for pause
+              btn.dataset.control = "pause";
+              setAdjustControlsEnabled(true);
+              return;
+            }
+          } else {
+            pauseTimer();
+          }
+          resetStartPauseBtn();
+        });
+      reloadBtn.onclick = reloadProgram;
       function startTimer() {
         try {
           if (!currentTask) return;
@@ -1984,7 +1956,6 @@ reloadBtn.onclick=reloadProgram;
 
           if (Scheduler.isPaused()) {
             Scheduler.resume();
-            updateStatus("Running", "running");
             addLogEntry("▶ Resumed");
             tts("Resumed", "en-US");
             AudioEngine.resumeAll();
@@ -1993,10 +1964,11 @@ reloadBtn.onclick=reloadProgram;
               currentTaskTotalSeconds,
               currentActionsList,
               updateDisplay,
-              function () {},
+              function () {}
             );
             addLogEntry("▶ Started: " + currentTask.name);
           }
+          updateStatus("Running", "running");
           lock();
           return true;
         } catch (e) {
@@ -2017,45 +1989,45 @@ reloadBtn.onclick=reloadProgram;
       }
 
       function resetTimer() {
-    // Stop everything
-    unlock();
-    AudioEngine.stopAll();
-    clearBackground();
-    clearTTS();
-    Scheduler.stop();
-resetSVG();
-resetStartPauseBtn();
-    // Reload current task
-    if (currentTask) {
-        loadTaskByIndex(currentScheduleIndex);
-    }
-    
-    updateStatus('Ready', 'idle');
-    addLogEntry('🔄 Reset current task');
-    tts("Reset", "en-US");
-}
+        // Stop everything
+        unlock();
+        AudioEngine.stopAll();
+        clearBackground();
+        clearTTS();
+        Scheduler.stop();
+        resetSVG();
+        resetStartPauseBtn();
+        // Reload current task
+        if (currentTask) {
+          loadTaskByIndex(currentScheduleIndex);
+        }
 
-function reloadProgram() {
-    // Stop everything
-    unlock();
-    AudioEngine.stopAll();
-    clearBackground();
-    clearTTS();
-    Scheduler.stop();
-    
-    // Reset SVG to initial state
-resetSVG();
-resetStartPauseBtn();
-    
-    // Load first task
-    if (scheduleList.length > 0) {
-        loadTaskByIndex(0);
-    }
-    
-    updateStatus('Ready', 'idle');
-    addLogEntry('🔄 Reloaded to first task');
-    tts("Reload", "en-US");
-}
+        updateStatus("Ready", "idle");
+        addLogEntry("🔄 Reset current task");
+        tts("Reset", "en-US");
+      }
+
+      function reloadProgram() {
+        // Stop everything
+        unlock();
+        AudioEngine.stopAll();
+        clearBackground();
+        clearTTS();
+        Scheduler.stop();
+
+        // Reset SVG to initial state
+        resetSVG();
+        resetStartPauseBtn();
+
+        // Load first task
+        if (scheduleList.length > 0) {
+          loadTaskByIndex(0);
+        }
+
+        updateStatus("Ready", "idle");
+        addLogEntry("🔄 Reloaded to first task");
+        tts("Reload", "en-US");
+      }
 
       function finishTask() {
         addLogEntry("✅ Task finished: " + currentTask.name);
@@ -2072,9 +2044,9 @@ resetStartPauseBtn();
           if (fullProgram.main && fullProgram.main.announceCompleted) {
             var t = getSpeech("all tasks completed").replace(
               "{activity}",
-              fullProgram.main.title,
+              fullProgram.main.title
             );
-            tts(t, defLang)//, stopBackgroundSound);
+            tts(t, defLang); //, stopBackgroundSound);
           }
           unlock();
           resetStartPauseBtn();
@@ -2093,11 +2065,8 @@ resetStartPauseBtn();
             addLogEntry("➡️ Next task ready (manual)");
 
             if (wasRunning && !wasPaused) {
-              // Auto-start if it was running
+              clearTTS();
               startTimer();
-            } else if (wasPaused) {
-              // Load in paused state - just show the task, don't start
-              updateStatus("Paused", "paused");
             }
           }
         } catch (e) {
@@ -2117,9 +2086,8 @@ resetStartPauseBtn();
             addLogEntry("⬅️ Previous task ready");
 
             if (wasRunning && !wasPaused) {
+              clearTTS();
               startTimer();
-            } else if (wasPaused) {
-              updateStatus("Paused", "paused");
             }
           } else {
             addLogEntry("⚠️ Already at first task");
@@ -2128,58 +2096,59 @@ resetStartPauseBtn();
           alert(e + "_goToNextTask");
         }
       }
-      
+
       function getSelectedUnit() {
-  var unit = 'sec';
-  for (var i = 0; i < unitRadios.length; i++) {
-    if (unitRadios[i].checked) {
-      unit = unitRadios[i].value;
-      break;
-    }
-  }
-  return unit;
-}
-// Unified adjustment handler
+        var unit = "sec";
+        for (var i = 0; i < unitRadios.length; i++) {
+          if (unitRadios[i].checked) {
+            unit = unitRadios[i].value;
+            break;
+          }
+        }
+        return unit;
+      }
+      // Unified adjustment handler
 
+      function adjustDuration(seconds) {
+        if (!currentTask) return;
+        if (!Scheduler.isRunning() || Scheduler.isPaused()) return;
 
-function adjustDuration(seconds) {
-  if (!currentTask) return;
-  if (!Scheduler.isRunning() || Scheduler.isPaused()) return;
-  
-  var unit = getSelectedUnit();
-  var multiplier = 1;
-  if (unit === 'min') multiplier = 60;
-  else if (unit === 'hour') multiplier = 3600;
-  
-  var totalSeconds = seconds * multiplier;
-  clearTTS();
-          Scheduler.addSeconds(totalSeconds);
-  
-  var unitLabel = unit === 'sec' ? 'sec' : (unit === 'min' ? 'min' : 'hr');
-  addLogEntry(
-    (seconds > 0 ? '➕ Added ' : '➖ Subtracted ') + 
-    Math.abs(seconds) + ' ' + unitLabel + 
-    (Math.abs(seconds) > 1 ? 's' : '')
-  );
-}
+        var unit = getSelectedUnit();
+        var multiplier = 1;
+        if (unit === "min") multiplier = 60;
+        else if (unit === "hour") multiplier = 3600;
 
-function setAdjustControlsEnabled(enabled) {
-  for (var i = 0; i < adjustButtons.length; i++) {
-    adjustButtons[i].disabled = !enabled;
-  }
-  return ;
-  for (var i = 0; i < adjustLabels.length; i++) {
-    if (enabled) {
-      adjustLabels[i].classList.remove('disabled');
-    } else {
-      adjustLabels[i].classList.add('disabled');
-    }
-    var radio = adjustLabels[i].querySelector('input[type="radio"]');
-    if (radio) {
-      radio.disabled = !enabled;
-    }
-  }
-}
+        var totalSeconds = seconds * multiplier;
+        clearTTS();
+        Scheduler.addSeconds(totalSeconds);
+
+        var unitLabel = unit === "sec" ? "sec" : unit === "min" ? "min" : "hr";
+        addLogEntry(
+          (seconds > 0 ? "➕ Added " : "➖ Subtracted ") +
+            Math.abs(seconds) +
+            " " +
+            unitLabel +
+            (Math.abs(seconds) > 1 ? "s" : "")
+        );
+      }
+
+      function setAdjustControlsEnabled(enabled) {
+        for (var i = 0; i < adjustButtons.length; i++) {
+          adjustButtons[i].disabled = !enabled;
+        }
+        return;
+        for (var i = 0; i < adjustLabels.length; i++) {
+          if (enabled) {
+            adjustLabels[i].classList.remove("disabled");
+          } else {
+            adjustLabels[i].classList.add("disabled");
+          }
+          var radio = adjustLabels[i].querySelector('input[type="radio"]');
+          if (radio) {
+            radio.disabled = !enabled;
+          }
+        }
+      }
 
       // ==================== INITIALIZATION ====================
       function init() {
@@ -2191,8 +2160,8 @@ function setAdjustControlsEnabled(enabled) {
         resetBtn.onclick = resetTimer;
         prevBtn.onclick = goToPrevTask;
         nextBtn.onclick = goToNextTask;
-        
-/*
+
+        /*
 var add5Btn = document.getElementById('add5Btn');
 var sub5Btn = document.getElementById('sub5Btn');
 var add10Btn = document.getElementById('add10Btn');
@@ -2200,31 +2169,33 @@ var sub10Btn = document.getElementById('sub10Btn');
 var add30Btn = document.getElementById('add30Btn');
 var sub30Btn = document.getElementById('sub30Btn');
 */
-        
-        
-(function setupAdjustmentButtons() {
-  var buttons = [
-    { id: 'add5Btn', value: 5 },
-    { id: 'sub5Btn', value: -5 },
-    { id: 'add10Btn', value: 10 },
-    { id: 'sub10Btn', value: -10 },
-    { id: 'add30Btn', value: 30 },
-    { id: 'sub30Btn', value: -30 }
-  ];
-  
-  for (var i = 0; i < buttons.length; i++) {
-    var btn = document.getElementById(buttons[i].id);
-    if (btn) {
-      btn.addEventListener('click', (function(val) {
-        return function() {
-          adjustDuration(val);
-        };
-      })(buttons[i].value));
-    }
-  }
-})()
 
-        var labelEl = document.getElementById('timerLabel'); //document.querySelector(".label");
+        (function setupAdjustmentButtons() {
+          var buttons = [
+            { id: "add5Btn", value: 5 },
+            { id: "sub5Btn", value: -5 },
+            { id: "add10Btn", value: 10 },
+            { id: "sub10Btn", value: -10 },
+            { id: "add30Btn", value: 30 },
+            { id: "sub30Btn", value: -30 }
+          ];
+
+          for (var i = 0; i < buttons.length; i++) {
+            var btn = document.getElementById(buttons[i].id);
+            if (btn) {
+              btn.addEventListener(
+                "click",
+                (function (val) {
+                  return function () {
+                    adjustDuration(val);
+                  };
+                })(buttons[i].value)
+              );
+            }
+          }
+        })();
+
+        var labelEl = document.getElementById("timerLabel"); //document.querySelector(".label");
         if (labelEl) {
           labelEl.onclick = function () {
             timerMode = timerMode === "remaining" ? "elapsed" : "remaining";
@@ -2248,7 +2219,7 @@ var sub30Btn = document.getElementById('sub30Btn');
         if (event.data && event.data.type === "stop") {
           AudioEngine.stopAll();
           stopBackgroundSound();
-          clearTTS()
+          clearTTS();
           Scheduler.stop();
           addLogEntry("stopped");
           unlock();

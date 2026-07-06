@@ -1,13 +1,10 @@
 <!doctype html>
 <html lang="en" data-label="html">
   <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=yes"
-    />
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <link rel="apple-touch-icon" href="favicon.png" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
     <title data-label="title">Activity Editor</title>
     <script src="trans.js"></script>
     <style>
@@ -307,7 +304,7 @@
         if (!activityDiv.hasAttribute("data-activity-id")) {
           activityDiv.setAttribute(
             "data-activity-id",
-            "act_" + nextActivityId++,
+            "act_" + nextActivityId++
           );
         }
         return activityDiv.getAttribute("data-activity-id");
@@ -361,7 +358,7 @@
             id: id,
             name: name,
             size: size,
-            /*src: src,*/ type: type,
+            /*src: src,*/ type: type
           });
           refreshAllMediaSelectors();
         } catch (e) {
@@ -414,16 +411,16 @@
             }
           }
           document.querySelector(
-            '[data-name="total-dur-task-count"]',
+            '[data-name="total-dur-task-count"]'
           ).textContent = tasksCount;
           document.querySelector(
-            '[data-name="total-dur-task-dur"]',
+            '[data-name="total-dur-task-dur"]'
           ).textContent = secsDisp(tasksDur);
           document.querySelector(
-            '[data-name="total-dur-sched-count"]',
+            '[data-name="total-dur-sched-count"]'
           ).textContent = schedCount;
           document.querySelector(
-            '[data-name="total-dur-sched-dur"]',
+            '[data-name="total-dur-sched-dur"]'
           ).textContent = secsDisp(schedDur);
         } catch (e) {
           alert("calcTotalDuration:\n" + e);
@@ -441,7 +438,7 @@
       function refreshAllMediaSelectors() {
         try {
           var selectors = document.querySelectorAll(
-            ".media-select-img, .media-select-snd",
+            ".media-select-img, .media-select-snd"
           );
           for (var i = 0; i < selectors.length; i++) {
             var sel = selectors[i];
@@ -469,17 +466,17 @@
             }
           }
           document.querySelector(
-            '[data-name="total-size-img-count"]',
+            '[data-name="total-size-img-count"]'
           ).textContent = imgCount;
           document.querySelector('[data-name="total-size-img"]').textContent =
             formatBytes(imgSize);
           document.querySelector(
-            '[data-name="total-size-audio-count"]',
+            '[data-name="total-size-audio-count"]'
           ).textContent = audioCount;
           document.querySelector('[data-name="total-size-audio"]').textContent =
             formatBytes(audioSize);
           document.querySelector(
-            '[data-name="total-size-media-count"]',
+            '[data-name="total-size-media-count"]'
           ).textContent = imgCount + audioCount;
           document.querySelector('[data-name="total-size-media"]').textContent =
             formatBytes(imgSize + audioSize);
@@ -567,7 +564,7 @@
         }
         // Using decodeURIComponent + escape handles complex Arabic characters accurately
         return decodeURIComponent(
-          escape(String.fromCharCode.apply(null, bytes)),
+          escape(String.fromCharCode.apply(null, bytes))
         );
       }
 
@@ -584,7 +581,7 @@
         rebuildTaskData(parsedData, "schedule");
         setTaskData(
           document.querySelector(".app-container:not(.hide)"),
-          parsedData,
+          parsedData
         );
       }
 
@@ -657,7 +654,7 @@
           title: "My HICT",
           defaultLang: "en-US",
           logUtterances: true,
-          announceCompleted: true,
+          announceCompleted: true
         },
         tasks: {
           t_44269: {
@@ -668,20 +665,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_50711: {
             name: "Jumping jacks",
@@ -691,20 +688,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_82439: {
             name: "Wall sit",
@@ -714,20 +711,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_1276: {
             name: "Pushups",
@@ -737,27 +734,27 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             actions: {
               action_1782843168613_30646: {
                 type: "count",
                 timingSeconds: "100",
-                payload: { start: "1", end: "10", step: "1", interval: "2" },
-              },
+                payload: { start: "1", end: "10", step: "1", interval: "2" }
+              }
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_76985: {
             name: "Crunches",
@@ -767,27 +764,27 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             actions: {
               action_1782843340070_35698: {
                 type: "count",
                 timingSeconds: "100",
-                payload: { start: "1", end: "10", step: "1", interval: "2" },
-              },
+                payload: { start: "1", end: "10", step: "1", interval: "2" }
+              }
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_84213: {
             name: "Step-ups",
@@ -797,20 +794,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_5084: {
             name: "Squats",
@@ -820,20 +817,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_23315: {
             name: "Triceps dips",
@@ -843,20 +840,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_12233: {
             name: "Plank",
@@ -866,20 +863,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_80050: {
             name: "High knees",
@@ -889,20 +886,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_51232: {
             name: "Mountain climbers",
@@ -912,20 +909,20 @@
               enabled: true,
               fromStart: "20",
               toEnd: "80",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             left: {
               enabled: true,
               fromStart: "60",
               toEnd: "20",
-              everySeconds: "20",
+              everySeconds: "20"
             },
             end: {
               playTicks: true,
               tickCount: "2",
               beep: true,
-              announceCompleted: true,
-            },
+              announceCompleted: true
+            }
           },
           t_76610: {
             name: "Rest",
@@ -935,16 +932,16 @@
               a_33706: {
                 type: "pre_msg",
                 timingSeconds: "60",
-                payload: { value: "next" },
+                payload: { value: "next" }
               },
               a_28436: {
                 type: "pre_msg",
                 timingSeconds: "90",
-                payload: { value: "left" },
-              },
+                payload: { value: "left" }
+              }
             },
-            end: { playTicks: true, tickCount: "4", beep: true },
-          },
+            end: { playTicks: true, tickCount: "4", beep: true }
+          }
         },
         schedule: {
           1: { taskId: "t_44269", repeat: "1" },
@@ -968,12 +965,12 @@
           19: { taskId: "t_80050", repeat: "1" },
           20: { taskId: "t_76610", repeat: "1" },
           21: { taskId: "t_51232", repeat: "1" },
-          22: { taskId: "t_76610", repeat: "1" },
-        },
+          22: { taskId: "t_76610", repeat: "1" }
+        }
       };
       function load(type) {
         if (type == "example-exam") {
-          return ;//return applyParsedDataToApp(preset_exam);
+          return; //return applyParsedDataToApp(preset_exam);
         }
         if (type == "example-hiit") {
           return applyParsedDataToApp(preset_hiit);
@@ -983,7 +980,7 @@
           loading =
             type === "HTML" ? handleParsedHtmlData : handleParsedJsonData;
           Android.triggerFallbackPicker(
-            type === "HTML" ? "text/html" : "application/json",
+            type === "HTML" ? "text/html" : "application/json"
           );
           return;
         }
@@ -991,7 +988,7 @@
         // Web Browser Fallback
         loadFromFile(
           type.toLowerCase(),
-          type === "HTML" ? handleParsedHtmlData : handleParsedJsonData,
+          type === "HTML" ? handleParsedHtmlData : handleParsedJsonData
         );
       }
 
@@ -1159,28 +1156,28 @@
         var iW = createImageWrapper(
           "",
           "",
-          getLabel("background-image").textContent || "Background Image",
+          getLabel("background-image").textContent || "Background Image"
         );
         iW.querySelector(".wrapper-label span").setAttribute(
           "data-label",
-          "background-image",
+          "background-image"
         );
         iW.querySelector("select").setAttribute(
           "data-bind",
-          "tasks." + _id + ".background.imageId",
+          "tasks." + _id + ".background.imageId"
         );
         var sW = createSoundWrapper(
           "",
           "",
-          getLabel("background-sound").textContent || "Background Sound",
+          getLabel("background-sound").textContent || "Background Sound"
         );
         sW.querySelector(".wrapper-label span").setAttribute(
           "data-label",
-          "background-sound",
+          "background-sound"
         );
         sW.querySelector("select").setAttribute(
           "data-bind",
-          "tasks." + _id + ".background.soundId",
+          "tasks." + _id + ".background.soundId"
         );
         html += iW.outerHTML;
         html += sW.outerHTML;
@@ -1412,7 +1409,7 @@
             undoMgr.record(["tasks", task.dataset.id, "actions"].join("."));
             btn.previousElementSibling.insertAdjacentElement(
               "beforebegin",
-              btn,
+              btn
             );
           }
           if (d == "d" && btn.nextElementSibling) {
@@ -1472,7 +1469,7 @@
               "",
               "",
               "",
-              getLabel("message").textContent,
+              getLabel("message").textContent
             );
             msgW
               .querySelector(".wrapper-label span")
@@ -1481,13 +1478,13 @@
               .querySelector("input")
               .setAttribute(
                 "data-bind",
-                "tasks." + task + ".actions." + _id + ".payload.text",
+                "tasks." + task + ".actions." + _id + ".payload.text"
               );
             msgW
               .querySelector("select")
               .setAttribute(
                 "data-bind",
-                "tasks." + task + ".actions." + _id + ".payload.lang",
+                "tasks." + task + ".actions." + _id + ".payload.lang"
               );
             contentHtml = msgW.outerHTML;
           } else if (_type == "pre_msg") {
@@ -1496,14 +1493,14 @@
               .querySelector("select")
               .setAttribute(
                 "data-bind",
-                "tasks." + task + ".actions." + _id + ".payload.value",
+                "tasks." + task + ".actions." + _id + ".payload.value"
               );
             contentHtml = preW.outerHTML;
           } else if (_type == "snd") {
             var sndW = createSoundWrapper(
               "",
               "",
-              getLabel("sound-id").textContent,
+              getLabel("sound-id").textContent
             );
             sndW
               .querySelector(".wrapper-label span")
@@ -1512,7 +1509,7 @@
               .querySelector("select")
               .setAttribute(
                 "data-bind",
-                "tasks." + task + ".actions." + _id + ".payload.soundId",
+                "tasks." + task + ".actions." + _id + ".payload.soundId"
               );
             contentHtml = sndW.outerHTML;
           } else if (_type == "count") {
@@ -1598,7 +1595,6 @@
           tdVal.style.padding = "2mm";
           tr.appendChild(tdVal);
           tbody.appendChild(tr);
-
         } catch (e) {
           alert(e + "");
         }
@@ -1610,11 +1606,10 @@
             undoMgr.record("tasks");
             act.previousElementSibling.insertAdjacentElement(
               "beforebegin",
-              act,
+              act
             );
             updatePositions();
           }
-
         } catch (e) {
           alert("mvUp\n" + e);
         }
@@ -1744,7 +1739,7 @@
           emptyText: "-- None --",
           valueKey: "id",
           textKey: "label",
-          selectedValue: selectedId,
+          selectedValue: selectedId
         });
       }
       function getSoundSelectOptions(selectedId) {
@@ -1758,14 +1753,14 @@
           emptyText: "-- None --",
           valueKey: "id",
           textKey: "label",
-          selectedValue: selectedId,
+          selectedValue: selectedId
         });
       }
       function getLanguageSelectOptions(selectedLang) {
         try {
           if (!selectedLang) {
             var dl = document.querySelector(
-              'select[data-bind="main.defaultLang"]',
+              'select[data-bind="main.defaultLang"]'
             );
             if (dl) dl = dl.value;
             selectedLang = dl;
@@ -1774,7 +1769,7 @@
             valueKey: "code",
             textKey: "name",
             selectedValue: selectedLang,
-            extraHtml: '<option value="+">+ Add</option>',
+            extraHtml: '<option value="+">+ Add</option>'
           });
         } catch (e) {
           alert("g...o\n" + e);
@@ -1801,7 +1796,7 @@
         if (ev.target.classList.contains("btn-test")) {
           try {
             var d = getTaskData(
-              document.querySelector(".app-container:not(.hide)"),
+              document.querySelector(".app-container:not(.hide)")
             );
             var t = getTaskData(e);
             d.tasks = t.tasks;
@@ -1822,7 +1817,7 @@
       window.createSoundWrapper = function (
         wrapperId,
         initialSoundId,
-        labelText,
+        labelText
       ) {
         if (!wrapperId)
           wrapperId =
@@ -1881,10 +1876,10 @@
         } else {
           playBtn.setAttribute("data-current-sound", "");
           playBtn.innerHTML =
-            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="4" fill="#e2e8f0"/><path d="M10 6v10.5a3.5 3.5 0 1 0 2 3.5V6l6-2v4l-6 2z" fill="#64748b"/><circle cx="18" cy="18" r="5" fill="#4a90e2"/><text x="18" y="20" font-size="8" text-anchor="middle" fill="white" font-weight="bold">+</text></svg>';
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="4" fill="#e2e8f0"><path d="M10 6v10.5a3.5 3.5 0 1 0 2 3.5V6l6-2v4l-6 2z" fill="#64748b"><circle cx="18" cy="18" r="5" fill="#4a90e2"><text x="18" y="20" font-size="8" text-anchor="middle" fill="white" font-weight="bold">+</text></svg>';
           playBtn.setAttribute(
             "onclick",
-            "(function(e){ var btn = e; addSoundWithBase64(function(id){ var w=e.parentElement; while(w && !w.classList.contains('wrapper-sound')) w=w.parentElement; if(!w)return;var s=w.querySelector('select');s.value=id; s.onchange(); }); })(this)",
+            "(function(e){ var btn = e; addSoundWithBase64(function(id){ var w=e.parentElement; while(w && !w.classList.contains('wrapper-sound')) w=w.parentElement; if(!w)return;var s=w.querySelector('select');s.value=id; s.onchange(); }); })(this)"
           );
         }
       };
@@ -1949,13 +1944,13 @@
               window.currentWebAudioElement.currentTime = 0;
             }
             this.paused = true;
-          },
+          }
         };
       // ======================== 2. IMAGE WRAPPER (with square preview) ========================
       window.createImageWrapper = function (
         wrapperId,
         initialImageId,
-        labelText,
+        labelText
       ) {
         if (!wrapperId)
           wrapperId =
@@ -2009,42 +2004,42 @@
               label:
                 getLabel("announce-elapsed").textContent || "Announce elapsed",
               val: "elapsed",
-              attr: { "data-label": "announce-elapsed" },
+              attr: { "data-label": "announce-elapsed" }
             },
             {
               label:
                 getLabel("announce-remaining").textContent || "Announce left",
               val: "left",
-              attr: { "data-label": "announce-remaining" },
+              attr: { "data-label": "announce-remaining" }
             },
             {
               label:
                 getLabel("announce-next").textContent || "Announce next task",
               val: "next",
-              attr: { "data-label": "announce-next" },
+              attr: { "data-label": "announce-next" }
             },
             {
               label:
                 getLabel("announce-time").textContent ||
                 "Announce current time",
               val: "time",
-              attr: { "data-label": "announce-time" },
+              attr: { "data-label": "announce-time" }
             },
             {
               label: getLabel("beep").textContent || "BEEP",
               val: "beep",
-              attr: { "data-label": "beep" },
+              attr: { "data-label": "beep" }
             },
             {
               label: getLabel("tick").textContent || "TICK",
               val: "tick",
-              attr: { "data-label": "tick" },
-            },
+              attr: { "data-label": "tick" }
+            }
           ],
           {
             valueKey: "val",
-            textKey: "label",
-          },
+            textKey: "label"
+          }
         );
 
         wrap.appendChild(select);
@@ -2119,7 +2114,7 @@
         for (var i = 0; i < tasks.length; i++) {
           var id = tasks[i].getAttribute("data-id");
           var nameInput = tasks[i].querySelector(
-            '[data-bind="' + "tasks." + id + '.name"]',
+            '[data-bind="' + "tasks." + id + '.name"]'
           );
           tasksList.push({
             id: id,
@@ -2127,7 +2122,7 @@
               ? nameInput.value
                 ? nameInput.value
                 : "_"
-              : "Unnamed Task",
+              : "Unnamed Task"
           });
         }
         //window.cachedTasksList = tasksList;
@@ -2141,7 +2136,7 @@
             textKey: "name",
             selectedValue: selectedTaskId,
             attrKey: "data-task-name",
-            attrValueKey: "name",
+            attrValueKey: "name"
           });
         } catch (e) {
           alert(e + "_" + "getAllTaskSelectOptions");
@@ -2163,7 +2158,7 @@
       window.createTaskWrapper = function (
         wrapperId,
         initialTaskId,
-        labelText,
+        labelText
       ) {
         if (!wrapperId)
           wrapperId =
@@ -2253,7 +2248,7 @@
         { code: "es-ES", name: "Español" },
         { code: "de-DE", name: "Deutsch" },
         { code: "it-IT", name: "Italiano" },
-        { code: "ar-SA", name: "العربية" },
+        { code: "ar-SA", name: "العربية" }
       ];
       function createLangSelect() {
         var langSelect = document.createElement("select");
@@ -2265,7 +2260,7 @@
         langSelect.setAttribute("onchange", "onMessageLangChange(this)");
         langSelect.setAttribute(
           "onclick",
-          "if(event.target==this){this.setAttribute('old-value', this.value)}",
+          "if(event.target==this){this.setAttribute('old-value', this.value)}"
         );
         return langSelect;
       }
@@ -2273,7 +2268,7 @@
         wrapperId,
         initialText,
         initialLang,
-        labelText,
+        labelText
       ) {
         if (!wrapperId)
           wrapperId =
@@ -2309,7 +2304,7 @@
 
         div.setAttribute(
           "onchange",
-          "this.querySelector('span').textContent=event.target.value;",
+          "this.querySelector('span').textContent=event.target.value;"
         );
         // speak preview button
         var speakBtn = document.createElement("button");
@@ -2338,7 +2333,7 @@
       window.addCustomLanguageToMessage = function (btn) {
         var customCode = prompt(
           'Enter language code (e.g., "ja-JP", "pt-BR", "ru-RU"):',
-          "ja-JP",
+          "ja-JP"
         );
         if (!customCode) return (btn.value = btn.getAttribute("old-value"));
         customCode = customCode.trim();
@@ -2354,7 +2349,7 @@
         defaultLangs.push({
           code: customCode,
           name: customCode.toUpperCase(),
-          custom: true,
+          custom: true
         });
         btn.innerHTML = getLanguageSelectOptions(customCode);
 
@@ -2450,7 +2445,7 @@
         function (e) {
           if (isTimeInput(e.target)) onBlurCleanup(e.target);
         },
-        true,
+        true
       );
       function setByPath(obj, path, value) {
         var parts = path.split(".");
@@ -2531,7 +2526,7 @@
                     "data.media[i].src",
                     data.media[i].name,
                     data.media[i].size,
-                    i,
+                    i
                   );
                   mediaContainer().appendChild(mediaDiv);
                   addMediaItemToLibrary(
@@ -2539,7 +2534,7 @@
                     data.media[i].name,
                     data.media[i].size,
                     "data.media[i].src",
-                    data.media[i].type,
+                    data.media[i].type
                   );
                 }
               }
@@ -2566,7 +2561,7 @@
                 for (var i in data.tasks) {
                   if ("actions" in data.tasks[i]) {
                     var t = activitiesContainer().querySelector(
-                      '.activity[data-id="' + i + '"]',
+                      '.activity[data-id="' + i + '"]'
                     );
                     var btn = t.querySelector(".theActions button");
                     for (var ac in data.tasks[i].actions) {
@@ -2662,16 +2657,16 @@
             .setAttribute("data-label", "main-bg-img");
           iW.querySelector("select").setAttribute(
             "data-bind",
-            "main.background.imageId",
+            "main.background.imageId"
           );
           var sW = createSoundWrapper("", "", "Default Background Sound");
           sW.querySelector(".wrapper-label span").setAttribute(
             "data-label",
-            "main-bg-snd",
+            "main-bg-snd"
           );
           sW.querySelector("select").setAttribute(
             "data-bind",
-            "main.background.soundId",
+            "main.background.soundId"
           );
 
           document.querySelector("#main .tab-content-inner").innerHTML =
@@ -2683,7 +2678,9 @@
             "</div>" +
             iW.outerHTML +
             sW.outerHTML +
-            '<div class="activity-options"><label class="check-label"><input type="checkbox" data-bind="main.logUtterances"> <span data-label="log-utterances">Log Utterances</span></label>' +
+            '<div class="activity-options">' +
+            '<label class="check-label"><input type="checkbox" data-bind="main.pauseOnHidden"><span data-label="pause-on-hidden">Pause when app is hidden</span></label>' +
+            '<label class="check-label"><input type="checkbox" data-bind="main.logUtterances"> <span data-label="log-utterances">Log Utterances</span></label>' +
             '<label class="check-label">' +
             '<input type=checkbox data-bind="main.announceCompleted"> <span data-label="announce-all-completed">Announce "all tasks completed"</span></label>' +
             "</div>" +
@@ -2815,17 +2812,17 @@
     <script>
       function sanitizeFileName(input) {
         // Define a regular expression to match non-alphanumeric characters
-        const regex = /[^\w\s]/g;
+        var regex = /[^\w\s]/g;
 
         // Replace all non-alphanumeric characters with an underscore
-        const sanitized = input.replace(regex, "_");
+        var sanitized = input.replace(regex, "_");
 
         return sanitized;
       }
 
       function save(type) {
         var data = getTaskData(
-          document.querySelector(".app-container:not(.hide)"),
+          document.querySelector(".app-container:not(.hide)")
         );
         if (!("tasks" in data))
           return alert("Your task list is empty. Please add a task first!");
@@ -2853,18 +2850,18 @@
             var iframeWindow = iframe.contentWindow;
             if (!iframeWindow || !iframeWindow.document) {
               throw new Error(
-                "Iframe content window or document is not available",
+                "Iframe content window or document is not available"
               );
             }
             iframeWindow =
               iframeWindow.document.documentElement.cloneNode(true);
             // Find the script element with data-id 'fullProgram'
             var fullProgramScript = iframeWindow.querySelector(
-              'script[data-id="fullProgram"]',
+              'script[data-id="fullProgram"]'
             );
             if (!fullProgramScript) {
               throw new Error(
-                'No script element with data-id "fullProgram" found',
+                'No script element with data-id "fullProgram" found'
               );
             }
             // Replace the text content of the script element
@@ -3187,7 +3184,7 @@
           event.returnValue = "Are you sure you want to leave this page?";
         });
         /*hash navigation handler*/
-        
+
         window.onhashchange = function (e) {
           var n = e.newURL.split("#")[1];
           var o = e.oldURL.split("#")[1];
@@ -3202,9 +3199,9 @@
               iframe.contentWindow.postMessage(
                 {
                   type: "stop",
-                  data: null,
+                  data: null
                 },
-                "*",
+                "*"
               );
             }
           }
@@ -3215,7 +3212,7 @@
             }
           }
         };
-        
+
         window.showImagePreview = function (img) {
           if (!img) {
             return;
@@ -3293,7 +3290,7 @@ navigation entry
           top: Math.ceil(er.top - cr.top),
           bottom: Math.ceil(cr.bottom - er.bottom),
           containerWidth: Math.ceil(cr.width),
-          width: Math.ceil(er.width),
+          width: Math.ceil(er.width)
         };
       }
 
@@ -3314,7 +3311,7 @@ navigation entry
             var e = document.createElement("span");
             e.setAttribute(
               "style",
-              "display:inline-block; border:none; outline: none; padding: 4px 6px; font-size: 12px; white-space: nowrap;",
+              "display:inline-block; border:none; outline: none; padding: 4px 6px; font-size: 12px; white-space: nowrap;"
             );
             e.textContent = eel.dataset.error;
             document.body.appendChild(e);
@@ -3358,7 +3355,6 @@ navigation entry
             s.textContent = c;
 
             document.body.appendChild(s);
-
           }, 0);
 
           return eel;
@@ -3375,7 +3371,7 @@ navigation entry
             s.parentElement.removeChild(s);
             var p = eel.parentElement;
             p.replaceChild(el, eel);
-            
+
             el.focus();
             return el;
           }
@@ -3405,9 +3401,9 @@ must be positive integer
             var eel = addErrorEl(el);
             eel.setAttribute(
               "data-error",
-              "must be positive integer" + " * " + "must be positive integer",
+              "must be positive integer" + " * " + "must be positive integer"
             );
-            
+
             return false;
           }
           value = parseInt(value, 10);
@@ -3502,9 +3498,9 @@ delegated listeners
             iframe.contentWindow.postMessage(
               {
                 type: "loadProgram",
-                data: jsonData,
+                data: jsonData
               },
-              "*",
+              "*"
             );
             console.log("✅ JSON sent to iframe");
           }
@@ -3529,7 +3525,7 @@ delegated listeners
         document.getElementById("btnRM").onclick = removeSelectedMedia;
         document.getElementById("saveRunningBtn").onclick = function () {
           var data = getTaskData(
-            document.querySelector(".app-container:not(.hide)"),
+            document.querySelector(".app-container:not(.hide)")
           );
           if (!("tasks" in data))
             return alert("Your task list is empty. Please add a task first!");
@@ -3563,7 +3559,7 @@ delegated listeners
             "display: flex",
             "align-items: center",
             "justify-content: center",
-            "cursor: wait",
+            "cursor: wait"
           ].join(";");
 
           // Create spinner container
@@ -3575,7 +3571,7 @@ delegated listeners
             "border: 4px solid #f3f3f3",
             "border-top: 4px solid #3498db",
             "border-radius: 50%",
-            "animation: spin 1s linear infinite",
+            "animation: spin 1s linear infinite"
           ].join(";");
 
           overlay.appendChild(spinner);
@@ -3595,7 +3591,7 @@ delegated listeners
             "#loading-spinner {",
             "  -webkit-animation: spin 1s linear infinite;",
             "  animation: spin 1s linear infinite;",
-            "}",
+            "}"
           ].join("\n");
           document.head.appendChild(style);
         }
@@ -3614,7 +3610,7 @@ delegated listeners
 
       function saveToJson() {
         var blob = new Blob([JSON.stringify(obj, null, 2)], {
-          type: "application/json",
+          type: "application/json"
         });
         var a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
@@ -3770,7 +3766,7 @@ delegated listeners
       function getState(key) {
         if (key === "app")
           return getTaskData(
-            document.querySelector(".app-container:not(.hide)"),
+            document.querySelector(".app-container:not(.hide)")
           );
         if (key === "main") return getTaskData(document.querySelector("#main"));
         if (key === "tasks")
@@ -3788,7 +3784,7 @@ delegated listeners
           var p = key.split(".");
           if (p[p.length - 1] == "actions") {
             var t = document.querySelector(
-              '#tasks [data-id="' + p[1] + '"] tbody',
+              '#tasks [data-id="' + p[1] + '"] tbody'
             );
             return getTaskData(t);
           }
@@ -3908,13 +3904,11 @@ delegated listeners
             focused = {
               el: e.target,
               val:
-                e.target.type === "checkbox"
-                  ? e.target.checked
-                  : e.target.value,
+                e.target.type === "checkbox" ? e.target.checked : e.target.value
             };
           }
         },
-        true,
+        true
       );
 
       document.addEventListener(
@@ -3925,7 +3919,7 @@ delegated listeners
               if (focused.val !== e.target.value) {
                 undoMgr.undoStack.push({
                   key: e.target.dataset.bind,
-                  val: focused.val,
+                  val: focused.val
                 }); // store key + value
                 undoMgr.redoStack = [];
               }
@@ -3935,7 +3929,7 @@ delegated listeners
             alert(e + "--");
           }
         },
-        true,
+        true
       );
     </script>
     <style>
@@ -4293,10 +4287,10 @@ delegated listeners
           /*window.screen.height > window.screen.width;*/ window.innerHeight >
           window.innerWidth;
         var portraitView = document.querySelector(
-          '[data-orientation="portrait"]',
+          '[data-orientation="portrait"]'
         );
         var landscapeView = document.querySelector(
-          '[data-orientation="landscape"]',
+          '[data-orientation="landscape"]'
         );
 
         // Determine which is the old view and which is the new view
@@ -4314,10 +4308,10 @@ delegated listeners
           // Copy content from data-container 1 to 5
           for (var i = 1; i <= 5; i++) {
             var oldElement = oldView.querySelector(
-              '[data-container="' + i + '"]',
+              '[data-container="' + i + '"]'
             );
             var newElement = newView.querySelector(
-              '[data-container="' + i + '"]',
+              '[data-container="' + i + '"]'
             );
 
             if (oldElement && newElement) {
@@ -4339,7 +4333,7 @@ delegated listeners
         // 1. Toggle Orientation Views
         if (!isPortrait) {
           var e = document.querySelector(
-            '.app-container:not(.hide) [data-container="2"]',
+            '.app-container:not(.hide) [data-container="2"]'
           );
           //if(!e.classList.contains('tab-con')){
           e.style.height =
@@ -4360,7 +4354,7 @@ delegated listeners
 
         var w,
           el = document.querySelector(
-            ".app-container:not(.hide) .activity-buttons",
+            ".app-container:not(.hide) .activity-buttons"
           );
         if (el) {
           w = el.getBoundingClientRect().width;
@@ -4699,7 +4693,7 @@ delegated listeners
 
         <div class="modal-body">
           <ul class="modal-list">
-            <li><strong data-label="about-version">Version</strong> 1.0.0</li>
+            <li><strong data-label="about-version">Version</strong> 1.0.1</li>
             <li>
               <strong data-label="about-issue">Issue Tracker</strong>
               <a
@@ -4715,7 +4709,7 @@ delegated listeners
             time-blocks.
           </p>
 
-          <hr class="modal-divider" />
+          <hr class="modal-divider">
 
           <h4 data-label="about-how">How It Works</h4>
           <ul class="modal-list">
@@ -4736,7 +4730,7 @@ delegated listeners
             </li>
           </ul>
 
-          <hr class="modal-divider" />
+          <hr class="modal-divider">
           <p data-label="about-app">
             This app is <strong>100% Free and Open Source</strong> under the
             <strong>Apache 2.0 License</strong>. It runs entirely locally in
