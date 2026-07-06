@@ -173,34 +173,6 @@
       .status-idle {
         background: #64748b;
       }
-      .tab-row {
-        display: table;
-        table-layout: fixed;
-        width: 100%;
-        border-collapse: collapse;
-      }
-      .tab-cell {
-        display: table-cell;
-        padding: 10px;
-        text-align: center;
-        cursor: pointer;
-        border-radius: 8px 8px 0 0;
-        min-width: 25%;
-        max-width: 45%;
-      }
-      .tab-cell > div {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .tab-active {
-        background: #2b4bff;
-        color: white;
-      }
-      .tab-inactive {
-        background: #e0e0e0;
-        color: #333;
-      }
       .log-panel {
         background: #1e293b;
         color: #a5f3c3;
@@ -211,21 +183,6 @@
         max-height: 200px;
         overflow-y: auto;
         text-align: left;
-      }
-      .bg-panel {
-        background: #f0f2f5;
-        border-radius: 0 0 12px 12px;
-        padding: 12px;
-        text-align: center;
-        min-height: 150px;
-      }
-      .bg-image-holder {
-        width: 100%;
-        min-height: 150px;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        border-radius: 8px;
       }
       .log-entry {
         padding: 3px;
@@ -241,6 +198,87 @@
       .tab-head td BUTTON {
         width: 90%;
       }
+      
+      .timer-bg-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 20px;
+  margin: 10px auto;
+  max-width: 320px;
+  min-height: 320px;
+  background: #f5f7ff;
+  transition: background-image 0.5s ease;
+}
+
+.timer-bg-container .timer-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+/* SVG shadow effect when background is present */
+.timer-bg-container.has-bg circle {
+  fill: rgba(255, 255, 255, 0.75) !important;
+  stroke: rgba(255, 255, 255, 0.9) !important;
+  stroke-width: 3 !important;
+}
+
+.timer-bg-container.has-bg #dots circle {
+  fill: rgba(255, 255, 255, 0.7) !important;
+}
+
+.timer-bg-container.has-bg #progress {
+  stroke: rgba(43, 75, 255, 0.9) !important;
+  filter: drop-shadow(0 0 6px rgba(43, 75, 255, 0.3));
+}
+
+.timer-bg-container.has-bg #timerText {
+  fill: #fff !important;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.timer-bg-container.has-bg #timerLabel {
+  fill: rgba(255,255,255,0.9) !important;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.4);
+}
+
+/* Background image styles */
+.bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.bg-image.visible {
+  opacity: 1;
+}
+
+/* Overlay for better text readability */
+.bg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.bg-overlay.visible {
+  opacity: 1;
+}
     </style>
   </head>
   <body>
@@ -309,34 +347,35 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
           </td>
         </tr>
       </table>
-
-      <div class="timer-wrap">
-        <svg width="280" height="280" viewBox="0 0 280 280">
-  <circle
-    cx="140"
-    cy="140"
-    r="130"
-    fill="#fff"
-    stroke="#eef0ff"
-    stroke-width="2"
-  ></circle>
-  <g id="dots"></g>
-  <path
-    id="progress"
-    fill="none"
-    stroke="#2b4bff"
-    stroke-width="6"
-    stroke-linecap="round"
-  ></path>
-  <text id="timerText" x="140" y="125" text-anchor="middle" font-family="monospace" font-size="36" fill="#000">
-    00:00:00
-  </text>
-  <text id="timerLabel" x="140" y="165" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#888">
-    Remaining
-  </text>
-</svg>
-      </div>
-
+<div id="timerBackground" class="timer-bg-container">
+  <div class="timer-wrap">
+    <svg width="280" height="280" viewBox="0 0 280 280">
+      <circle
+        cx="140"
+        cy="140"
+        r="130"
+        fill="rgba(255,255,255,0.85)"
+        stroke="#eef0ff"
+        stroke-width="2"
+      ></circle>
+      <g id="dots"></g>
+      <path
+        id="progress"
+        fill="none"
+        stroke="#2b4bff"
+        stroke-width="6"
+        stroke-linecap="round"
+      ></path>
+      <!-- Timer text inside SVG -->
+      <text id="timerText" x="140" y="125" text-anchor="middle" font-family="monospace" font-size="36" fill="#000">
+        00:00:00
+      </text>
+      <text id="timerLabel" x="140" y="165" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#888">
+        Remaining
+      </text>
+    </svg>
+  </div>
+</div>
       <div class="btns">
         <button id="startPauseBtn" type="button">▶ Start</button>
         <button id="resetBtn" type="button">🔄 Reset</button>
@@ -361,21 +400,8 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
 </div>
 
       <div class="status status-idle" id="statusDisplay">⏳ Ready</div>
-
-      <div class="tab-row">
-        <div id="tabLogBtn" class="tab-cell tab-active"><div>📋 Log</div></div>
-        <div id="tabBgBtn" class="tab-cell tab-inactive">
-          <div>🖼️ Background</div>
-        </div>
-      </div>
-      <div id="logPanel" class="log-panel">
-        <div class="log-entry">🎯 Activity Scheduler Ready</div>
-      </div>
-      <div id="bgPanel" class="bg-panel" style="display: none">
-        <div id="bgImageHolder" class="bg-image-holder">
-          <div style="padding: 60px 20px; color: #999">No background image</div>
-        </div>
-      </div>
+    <div id="logPanel" class="log-panel">
+      <div class="log-entry">🎯 Activity Scheduler Ready</div>
     </div>
 
     <script data-id="fullProgram" type="text/javascript">
@@ -477,13 +503,8 @@ AAAAAAAAAgACAEgAAABIAAAAAAAAAAEVTGF2YzYyLjI4LjEwMiBsaWJ4MjY0AAAAAAAAAAAAAAAY
       var statusDisplay = document.getElementById("statusDisplay");
       var logPanel = document.getElementById("logPanel");
       var resetBtn = document.getElementById("resetBtn");
-      var prevBtn = document.getElementById("prevBtn");
+      //var prevBtn = document.getElementById("prevBtn");
       //var nextBtn = document.getElementById("nextBtn");
-      //var add5Btn = document.getElementById("add5Btn");
-      var sub5Btn = document.getElementById("sub5Btn");
-      var tabLogBtn = document.getElementById("tabLogBtn");
-      var tabBgBtn = document.getElementById("tabBgBtn");
-      var bgPanel = document.getElementById("bgPanel");
       var unitRadios = document.querySelectorAll('input[name="adjustUnit"]');
 var adjustButtons = document.querySelectorAll('.adjust-group button');
 var adjustLabels = document.querySelectorAll('.adjust-units label');
@@ -1090,6 +1111,63 @@ document.addEventListener('DOMContentLoaded', function() {
             "</div>";
         }
       }
+      function updateBackgroundImage(imageId) {
+  var container = document.getElementById('timerBackground');
+  if (!container) return;
+  
+  // Remove existing background elements
+  var existingBg = container.querySelector('.bg-image');
+  var existingOverlay = container.querySelector('.bg-overlay');
+  if (existingBg) existingBg.remove();
+  if (existingOverlay) existingOverlay.remove();
+  
+  if (!imageId) {
+    container.classList.remove('has-bg');
+    container.style.background = '#f5f7ff';
+    return;
+  }
+  
+  var imageObj = getImageById(imageId);
+  if (imageObj && imageObj.src) {
+    // Create background image element
+    var bgDiv = document.createElement('div');
+    bgDiv.className = 'bg-image visible';
+    bgDiv.style.backgroundImage = 'url(' + imageObj.src + ')';
+    bgDiv.style.backgroundSize = 'contain';
+    bgDiv.style.backgroundPosition = 'center';
+    bgDiv.style.backgroundRepeat = 'no-repeat';
+    
+    // Create overlay for readability
+    var overlay = document.createElement('div');
+    overlay.className = 'bg-overlay visible';
+    
+    // Insert at the beginning of container
+    container.insertBefore(overlay, container.firstChild);
+    container.insertBefore(bgDiv, container.firstChild);
+    
+    // Add class for styling
+    container.classList.add('has-bg');
+    container.style.background = 'transparent';
+    
+    // Ensure SVG elements have shadow effects
+    addLogEntry('🖼️ Background image loaded: ' + imageId);
+  } else {
+    container.classList.remove('has-bg');
+    container.style.background = '#f5f7ff';
+  }
+}
+function clearBackground() {
+  var container = document.getElementById('timerBackground');
+  if (!container) return;
+  
+  var bgDiv = container.querySelector('.bg-image');
+  var overlay = container.querySelector('.bg-overlay');
+  if (bgDiv) bgDiv.remove();
+  if (overlay) overlay.remove();
+  
+  container.classList.remove('has-bg');
+  container.style.background = '#f5f7ff';
+}
 
       // ==================== TTS ====================
       function tts(txt, lang, cb) {
@@ -1302,9 +1380,6 @@ document.addEventListener('DOMContentLoaded', function() {
         function addSeconds(secs) {
           try {
             if (!running) return false;
-            if ("speechSynthesis" in window) {
-              clearTTS();
-            }
             var wasPaused = paused;
             paused = true;
             if (secs < 0) {
@@ -1369,15 +1444,11 @@ document.addEventListener('DOMContentLoaded', function() {
           addAction(total, updateBackgroundImage, [
             task.background.imageId || fullProgram.main.background.imageId,
           ]);
-          addAction(0, updateBackgroundImage, [
-            fullProgram.main.background.imageId,
-          ]);
+          addAction(0, clearBackground, []);
           addAction(total, playBackgroundSound, [
             task.background.soundId || fullProgram.main.background.soundId,
           ]);
-          addAction(0, stopBackgroundSound || playBackgroundSound, [
-            fullProgram.main.background.soundId,
-          ]);
+          addAction(0, stopBackgroundSound, []);
 
           // Task started announcement
           if (task.options && task.options.announceStarted) {
@@ -1946,25 +2017,10 @@ reloadBtn.onclick=reloadProgram;
       }
 
       function resetTimer() {
-        AudioEngine.stopAll();
-        clearTTS()
-        var wasPaused = Scheduler.isPaused();
-        Scheduler.start(
-          currentTaskTotalSeconds,
-          currentActionsList,
-          updateDisplay,
-          function () {},
-        );
-        if (wasPaused) Scheduler.pause();
-        updateStatus("Ready", "idle");
-        addLogEntry("🔄 Reset current task");
-        tts("Reset", "en-US");
-      }
-      
-      function resetTimer() {
     // Stop everything
     unlock();
     AudioEngine.stopAll();
+    clearBackground();
     clearTTS();
     Scheduler.stop();
 resetSVG();
@@ -1983,6 +2039,7 @@ function reloadProgram() {
     // Stop everything
     unlock();
     AudioEngine.stopAll();
+    clearBackground();
     clearTTS();
     Scheduler.stop();
     
@@ -1999,19 +2056,6 @@ resetStartPauseBtn();
     addLogEntry('🔄 Reloaded to first task');
     tts("Reload", "en-US");
 }
-
-
-      function addSecondsToTimer(secs) {
-        if (!currentTask) return;
-        if (Scheduler.isRunning()) {
-          Scheduler.addSeconds(secs);
-          addLogEntry(
-            (secs > 0 ? "➕ Added " : "➖ Subtracted ") +
-              Math.abs(secs) +
-              " sec",
-          );
-        }
-      }
 
       function finishTask() {
         addLogEntry("✅ Task finished: " + currentTask.name);
@@ -2084,22 +2128,6 @@ resetStartPauseBtn();
           alert(e + "_goToNextTask");
         }
       }
-
-      function switchTab(tabName) {
-        var logPanelDiv = document.getElementById("logPanel");
-        var bgPanelDiv = document.getElementById("bgPanel");
-        if (tabName === "log") {
-          logPanelDiv.style.display = "block";
-          bgPanelDiv.style.display = "none";
-          tabLogBtn.className = "tab-cell tab-active";
-          tabBgBtn.className = "tab-cell tab-inactive";
-        } else {
-          logPanelDiv.style.display = "none";
-          bgPanelDiv.style.display = "block";
-          tabBgBtn.className = "tab-cell tab-active";
-          tabLogBtn.className = "tab-cell tab-inactive";
-        }
-      }
       
       function getSelectedUnit() {
   var unit = 'sec';
@@ -2124,7 +2152,8 @@ function adjustDuration(seconds) {
   else if (unit === 'hour') multiplier = 3600;
   
   var totalSeconds = seconds * multiplier;
-  addSecondsToTimer(totalSeconds);
+  clearTTS();
+          Scheduler.addSeconds(totalSeconds);
   
   var unitLabel = unit === 'sec' ? 'sec' : (unit === 'min' ? 'min' : 'hr');
   addLogEntry(
@@ -2171,14 +2200,6 @@ var sub10Btn = document.getElementById('sub10Btn');
 var add30Btn = document.getElementById('add30Btn');
 var sub30Btn = document.getElementById('sub30Btn');
 */
-   
-
-        tabLogBtn.onclick = function () {
-          switchTab("log");
-        };
-        tabBgBtn.onclick = function () {
-          switchTab("bg");
-        };
         
         
 (function setupAdjustmentButtons() {
@@ -2226,6 +2247,7 @@ var sub30Btn = document.getElementById('sub30Btn');
         }
         if (event.data && event.data.type === "stop") {
           AudioEngine.stopAll();
+          stopBackgroundSound();
           clearTTS()
           Scheduler.stop();
           addLogEntry("stopped");
