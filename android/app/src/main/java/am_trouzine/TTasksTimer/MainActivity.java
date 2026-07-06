@@ -51,6 +51,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         }
     }
 
+    public void toastFromJava(final String message) {
+        if (message != null) {
+            ttsHandler.post(new ToastRunnable(this, message));
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,7 +91,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                         view.getContext().startActivity(intent);
                         return true; // Tells the WebView: "Java handled this, don't load it here!"
                     } catch (Exception e) {
-                        alertFromJava("No browser found to open link.");
+                        toastFromJava("No browser found to open link.");
                         return true;
                     }
                 }
@@ -101,7 +107,22 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             }
         });
         mWebView.setWebChromeClient(new WebChromeClient());
-        
+        /*
+        mWebView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage consoleMessage) {
+                // Format a clear error string with the log message, line number, and file source
+                String logDetail = "JS Console [" + consoleMessage.messageLevel() + "]\n"
+                        + consoleMessage.message() + "\n"
+                        + "(Line: " + consoleMessage.lineNumber() + " in " + consoleMessage.sourceId() + ")";
+                
+                // Show it on screen as a short Toast notification
+                Toast.makeText(MainActivity.this, logDetail, Toast.LENGTH_LONG).show();
+                
+                return true; // Tells the system we intercepted the log successfully
+            }
+        });
+        */
         mWebView.addJavascriptInterface(new FileHandler(this), "Android");
         mWebView.loadUrl("file:///android_asset/index.html");
         setContentView(mWebView);
@@ -218,8 +239,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	  mBgPlayer.start();
 	  
 	 } catch (Exception e) {
-	  alertFromJava("Audio Playback Error: " + e.getMessage());
-	 }
+        toastFromJava("Audio Playback Error: " + e.getMessage());
+    }
     }
 	
 	public void stopBgAudio() {
@@ -230,8 +251,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 mBgPlayer = null;
             }
         } catch (Exception e) {
-            alertFromJava("Stop Error: " + e.getMessage());
-        }
+        toastFromJava("Stop Error: " + e.getMessage());
+    }
     }
 
     public void playAudioFromBase64(String base64Data) {
@@ -278,8 +299,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 	  
 	  
 	 } catch (Exception e) {
-	  alertFromJava("Audio Playback Error: " + e.getMessage());
-	 }
+        toastFromJava("Audio Playback Error: " + e.getMessage());
+    }
     }
 	
 	public void stopAudio() {
@@ -290,8 +311,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 mSoundPlayer = null;
             }
         } catch (Exception e) {
-            alertFromJava("Stop Error: " + e.getMessage());
-        }
+        toastFromJava("Stop Error: " + e.getMessage());
+    }
     }
 
     public void duck(boolean on) {
@@ -367,8 +388,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                     audioTrack.release();
 
                 } catch (Exception e) {
-                    alertFromJava("Tone Generation Error: " + e.getMessage());
-                }
+        toastFromJava("Tone Generation Error: " + e.getMessage());
+    }
             }
         }).start();
     }
@@ -379,6 +400,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 	
 	public void resumeAllAudios() {
+		duckCount = 0;
+	 isDucked = false;
 	 float vol = isDucked ? 0.2f : 1.0f; 
 	 if (mBgPlayer != null){
 		 mBgPlayer.setVolume(vol, vol);
@@ -428,7 +451,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             // Completely removed the anonymous OnCompletionListener class here to bypass R8 crash!
 
         } catch (Exception e) {
-            alertFromJava("Audio Playback Error: " + e.getMessage());
+            toastFromJava("Audio Playback Error: " + e.getMessage());
         }
     }
     public void pauseNativeAudioFromWeb() {
@@ -437,7 +460,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 mPlayer.pause();
             }
         } catch (Exception e) {
-            alertFromJava("Pause Error: " + e.getMessage());
+                toastFromJava("Pause Error: " + e.getMessage());
         }
     }
 
@@ -447,7 +470,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 mPlayer.start();
             }
         } catch (Exception e) {
-            alertFromJava("Resume Error: " + e.getMessage());
+            toastFromJava("Resume Error: " + e.getMessage());
         }
     }
 
@@ -459,7 +482,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 mPlayer = null;
             }
         } catch (Exception e) {
-            alertFromJava("Stop Error: " + e.getMessage());
+            //alertFromJava("Stop Error: " + e.getMessage());
+            toastFromJava("Stop Error: " + e.getMessage());
         }
     }
     
@@ -719,8 +743,8 @@ try {
             });
             
         } catch (Exception e) {
-            alertFromJava("Read Error: " + e.getMessage());
-        }
+        toastFromJava("Read Error: " + e.getMessage());
+    }
     }
 
     private static class JavaScriptAlertRunnable implements Runnable {
@@ -923,13 +947,31 @@ public void triggerFallbackPicker(String filetype) {
     try {
         mActivity.startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE);
     } catch (Exception e) {
-        mActivity.alertFromJava("Picker Error: " + e.getMessage());
+        mActivity.toastFromJava("Picker Error: " + e.getMessage());
     }
 }
 
         @JavascriptInterface
         public void speakText(String text, String lang) {
             mActivity.speak(text, lang);
+        }
+        
+        @JavascriptInterface
+        public void stopNativeTTS() {
+            mActivity.ttsHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mActivity.mTTS != null) {
+                        try {
+                            mActivity.mTTS.stop(); // Instantly stops native audio synthesis
+                        } catch (Exception e) {
+                            // Safe catch block to prevent crashes if TTS isn't ready
+                        }
+                    }
+                    // Force unducking as a safety fallback when clearing speech
+                    mActivity.duck(false); 
+                }
+            });
         }
 
         @JavascriptInterface
