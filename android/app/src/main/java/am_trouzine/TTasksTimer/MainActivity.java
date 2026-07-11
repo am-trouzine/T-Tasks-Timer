@@ -426,9 +426,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     public void playNativeAudioFromBase64(String base64Data) {
         try {
             if (mPlayer != null) {
-                mPlayer.stop();
-                mPlayer.release();
-                mPlayer = null;
+                stopNativeAudioFromWeb(); // Cleanly resets previous tracks safely
             }
 
             String cleanBase64 = base64Data;
@@ -446,21 +444,62 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             mPlayer = new MediaPlayer();
             mPlayer.setDataSource(tempAudioFile.getAbsolutePath());
             mPlayer.prepare();
-            mPlayer.start();
 
-            // Completely removed the anonymous OnCompletionListener class here to bypass R8 crash!
+            // 1. Success! Trigger onplay via web thread
+            ttsHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mWebView != null) {
+                        mWebView.loadUrl("javascript:if(window.AudioControl){window.AudioControl.onplay();}");
+                    }
+                }
+            });
+
+            // 2. Track Ends! Trigger onpause via web thread
+            mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    ttsHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mWebView != null) {
+                                mWebView.loadUrl("javascript:if(window.AudioControl){window.AudioControl.onpause();}");
+                            }
+                        }
+                    });
+                }
+            });
+
+            mPlayer.start();
 
         } catch (Exception e) {
             toastFromJava("Audio Playback Error: " + e.getMessage());
+            ttsHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mWebView != null) {
+                        mWebView.loadUrl("javascript:if(window.AudioControl){window.AudioControl.onpause();}");
+                    }
+                }
+            });
         }
     }
+
     public void pauseNativeAudioFromWeb() {
         try {
             if (mPlayer != null && mPlayer.isPlaying()) {
                 mPlayer.pause();
+                ttsHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mWebView != null) {
+                            mWebView.loadUrl("javascript:if(window.AudioControl){window.AudioControl.onpause();}");
+                        }
+                    }
+                });
             }
         } catch (Exception e) {
-                toastFromJava("Pause Error: " + e.getMessage());
+            toastFromJava("Pause Error: " + e.getMessage());
         }
     }
 
@@ -468,6 +507,15 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         try {
             if (mPlayer != null && !mPlayer.isPlaying()) {
                 mPlayer.start();
+                // Direct callback to update your UI button to playing mode (❚❚)
+                ttsHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mWebView != null) {
+                            mWebView.loadUrl("javascript:if(window.AudioControl){window.AudioControl.onplay();}");
+                        }
+                    }
+                });
             }
         } catch (Exception e) {
             toastFromJava("Resume Error: " + e.getMessage());
@@ -479,10 +527,18 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             if (mPlayer != null) {
                 mPlayer.stop();
                 mPlayer.release();
-                mPlayer = null;
+                mPlayer = null; // Cleaned up the structural pause call crash from here!
+                
+                ttsHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mWebView != null) {
+                            mWebView.loadUrl("javascript:if(window.AudioControl){window.AudioControl.onpause();}");
+                        }
+                    }
+                });
             }
         } catch (Exception e) {
-            //alertFromJava("Stop Error: " + e.getMessage());
             toastFromJava("Stop Error: " + e.getMessage());
         }
     }

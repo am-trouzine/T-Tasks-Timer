@@ -1047,29 +1047,7 @@
         AudioEngine.stopAll();
       }
 
-      function updateBackgroundImage(imageId) {
-        var holder = document.getElementById("bgImageHolder");
-        if (!holder) return;
-        if (!imageId) {
-          holder.style.backgroundImage = "none";
-          holder.innerHTML =
-            '<div style="padding: 60px 20px; color: #999;">No background image</div>';
-          return;
-        }
-        var imageObj = getImageById(imageId);
-        if (imageObj && imageObj.src) {
-          holder.style.backgroundImage = "url(" + imageObj.src + ")";
-          holder.style.backgroundSize = "cover";
-          holder.style.backgroundPosition = "center";
-          holder.innerHTML = "";
-        } else {
-          holder.style.backgroundImage = "none";
-          holder.innerHTML =
-            '<div style="padding: 60px 20px; color: #999;">Image not found: ' +
-            imageId +
-            "</div>";
-        }
-      }
+      
       function updateBackgroundImage(imageId) {
         var container = document.getElementById("timerBackground");
         if (!container) return;
@@ -2214,11 +2192,13 @@ var sub30Btn = document.getElementById('sub30Btn');
           buildScheduleList();
           loadTaskByIndex(0);
           addLogEntry("📥 New program loaded from parent");
+          resetSVG();
           resetStartPauseBtn();
         }
         if (event.data && event.data.type === "stop") {
           AudioEngine.stopAll();
           stopBackgroundSound();
+          clearBackground();
           clearTTS();
           Scheduler.stop();
           addLogEntry("stopped");

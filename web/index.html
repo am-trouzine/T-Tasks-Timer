@@ -159,9 +159,9 @@
 
         tdRepeat.appendChild(repeatInput);
         tdRepeat.innerHTML +=
-          '<button onclick="slotBefore(this)">before</button>' +
+          '<button onclick="slotBefore(this)">⟐+</button>' +
           " " +
-          '<button onclick="slotAfter(this)">after</button>';
+          '<button onclick="slotAfter(this)">+⟐</button>';
         tr.appendChild(tdRepeat);
 
         // Cell 3: Action buttons
@@ -511,12 +511,17 @@
 
           wrapper.appendChild(img);
         } else {
-          var audio = document.createElement("audio");
+          var audio = createAudioWrap(id, src, name, size)
+/*
+document.createElement("audio");
           audio.src = src;
           audio.setAttribute("data-bind", "media." + id + ".src");
           audio.setAttribute("data-size", size);
           audio.controls = true;
+          */
           wrapper.appendChild(audio);
+          //alert(src.substr(0,50))
+          //audio.insertAdjacentHTML('afterend', createAudioWrap(id, src, name, size))
         }
         var label = document.createElement("div");
         label.style.fontSize = "10px";
@@ -571,19 +576,28 @@
       /**
        * 2. Shared Data Application Processors
        */
-      function applyParsedDataToApp(parsedData) {
-        undoMgr.record("app");
-        emptyTaskData("media");
-        emptyTaskData("tasks");
-        emptyTaskData("schedule");
-        rebuildTaskData(parsedData, "media");
-        rebuildTaskData(parsedData, "tasks");
-        rebuildTaskData(parsedData, "schedule");
-        setTaskData(
-          document.querySelector(".app-container:not(.hide)"),
-          parsedData
-        );
-      }
+function applyParsedDataToApp(parsedData) {
+  try {
+    showLoadingOverlay();
+    setTimeout(function() {
+      undoMgr.record("app");
+      emptyTaskData("media");
+      emptyTaskData("tasks");
+      emptyTaskData("schedule");
+      rebuildTaskData(parsedData, "media");
+      rebuildTaskData(parsedData, "tasks");
+      rebuildTaskData(parsedData, "schedule");
+      setTaskData(
+        document.querySelector(".app-container:not(.hide)"),
+        parsedData
+      );
+      hideLoadingOverlay();
+    }, 50);
+  } catch(e) {
+    hideLoadingOverlay();
+    console.error("applyParsedDataToApp\nOperation failed:", e);
+  }
+}
 
       function handleParsedJsonData(data) {
         try {
@@ -1050,6 +1064,7 @@
           var parent = selected.parentNode;
           if (parent) {
             undoMgr.record("media");
+            if(AudioControl.id==mediaId)AudioControl.stop();
             parent.removeChild(selected);
             removeMediaItemFromLibrary(mediaId);
           }
@@ -1289,7 +1304,7 @@
           _id +
           '.end.playTicks"> <span data-label="play">' +
           (getLabel("play").textContent || "Play") +
-          '</span></label> <input dir="auto" class="inp-xs" value="1" data-bind="tasks.' +
+          '</span></label> <input dir="auto" class="inp-xs" value="2" data-bind="tasks.' +
           _id +
           '.end.tickCount"> <span data-label="ticks">' +
           (getLabel("ticks").textContent || "ticks") +
@@ -1795,22 +1810,27 @@
         }
         if (ev.target.classList.contains("btn-test")) {
           try {
+          AudioControl.stop();
+          openIframeOverlay();
+            showLoadingOverlay();
+            setTimeout(function() {
             var d = getTaskData(
               document.querySelector(".app-container:not(.hide)")
             );
             var t = getTaskData(e);
             d.tasks = t.tasks;
             delete d.schedule;
-            openIframeOverlay();
-            showLoadingOverlay();
+            
             sendJsonToIframe(d);
-            setTimeout(hideLoadingOverlay, 800);
+            hideLoadingOverlay();
+            }, 50);
           } catch (e) {
             hideLoadingOverlay();
             console.error("Operation failed:", e);
           }
         }
       });
+      
       // ======================== 1. SOUND WRAPPER ========================
       // Returns DOM element: <span class="wrapper-sound"> with select + play button
       // Predefined sound IDs: "beep", "chime", "bell", "notification" (demo)
@@ -1868,15 +1888,12 @@
         var selectedVal = selectEl.value;
         if (selectedVal && selectedVal !== "") {
           playBtn.setAttribute("data-current-sound", selectedVal);
-          playBtn.innerHTML =
-            '▶️  <span data-label="play">' +
-            (getLabel("play").textContent || "Play") +
-            "</span>";
-          playBtn.setAttribute("onclick", "playSelectedSound(this)");
+          playBtn.innerHTML = createAudioBtn(selectedVal);
+          playBtn.removeAttribute("onclick");
         } else {
           playBtn.setAttribute("data-current-sound", "");
           playBtn.innerHTML =
-            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="4" fill="#e2e8f0"><path d="M10 6v10.5a3.5 3.5 0 1 0 2 3.5V6l6-2v4l-6 2z" fill="#64748b"><circle cx="18" cy="18" r="5" fill="#4a90e2"><text x="18" y="20" font-size="8" text-anchor="middle" fill="white" font-weight="bold">+</text></svg>';
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="4" fill="#e2e8f0"/><path d="M10 6v10.5a3.5 3.5 0 1 0 2 3.5V6l6-2v4l-6 2z" fill="#64748b"/><circle cx="18" cy="18" r="5" fill="#4a90e2"/><text x="18" y="20" font-size="8" text-anchor="middle" fill="white" font-weight="bold">+</text></svg>';
           playBtn.setAttribute(
             "onclick",
             "(function(e){ var btn = e; addSoundWithBase64(function(id){ var w=e.parentElement; while(w && !w.classList.contains('wrapper-sound')) w=w.parentElement; if(!w)return;var s=w.querySelector('select');s.value=id; s.onchange(); }); })(this)"
@@ -1884,68 +1901,146 @@
         }
       };
 
-      window.playSelectedSound = function (btn) {
-        var soundId = btn.getAttribute("data-current-sound");
-        if (!soundId) {
-          alert("No sound selected");
-          return;
-        }
-        var el = document.querySelector('[data-media-id="' + soundId + '"]');
-        if (el) el = el.querySelector("audio");
-        if (el) playSoundAsset(el);
-      };
+//===★★===
+var AudioControl = {
+    id: 0,
+    paused: true,
+    _browserAudio: null, 
 
-      function playSoundAsset(el) {
-        if (el == window.currentWebAudioElement) {
-          AudioControl.paused ? AudioControl.play() : AudioControl.pause();
+    // Unified UI state updaters
+    onplay: function() { this.paused = false; this._updateUI('❚❚'); },
+    onpause: function() { this.paused = true; this._updateUI('▶'); },
+
+    init: function(id, src) {
+        if (this.id && this.id !== id) {
+            this.stop();
+        }
+        this.id = id;
+        this.src = src;
+        this.play();
+    },
+
+    play: function() {
+        if (!this.id) return;
+
+        if (typeof Android !== "undefined" && Android.playNativeAudio) {
+            // If the track is already loaded and just paused, call resume instead!
+            if (!this.paused && AudioControl.id === this.id) {
+                 Android.resumeNativeAudio();
+            } else {
+                 Android.playNativeAudio(this.src);
+            }
         } else {
-          if (window.currentWebAudioElement) AudioControl.stop();
-          window.currentWebAudioElement = el;
-          AudioControl.play();
+            if (!this._browserAudio) {
+                this._browserAudio = new Audio(this.src);
+
+                var self = this;
+                this._browserAudio.onplay = function() { self.onplay(); };
+                this._browserAudio.onpause = function() { self.onpause(); };
+                this._browserAudio.onended = function() { self.onpause(); };
+                //this._browserAudio.onerror = function() { self.onpause(); };
+            }
+            this._browserAudio.play();
         }
-      }
-      /**
-       * UI Audio Controller Utility3
-       */
-      var currentWebAudioElement,
-        AudioControl = {
-          paused: true,
-          play: function () {
-            if (typeof Android !== "undefined" && Android.pauseNativeAudio) {
-              Android.playNativeAudio(window.currentWebAudioElement.src);
-            } else if (window.currentWebAudioElement) {
-              window.currentWebAudioElement.play();
-            }
-            this.paused = false;
-          },
-          pause: function () {
-            if (typeof Android !== "undefined" && Android.pauseNativeAudio) {
-              Android.pauseNativeAudio();
-            } else if (window.currentWebAudioElement) {
-              window.currentWebAudioElement.pause();
-            }
-            this.paused = true;
-          },
+    },
 
-          resume: function () {
-            if (typeof Android !== "undefined" && Android.resumeNativeAudio) {
-              Android.resumeNativeAudio();
-            } else if (window.currentWebAudioElement) {
-              window.currentWebAudioElement.play();
-            }
-            this.paused = false;
-          },
+    pause: function() {
+        if (typeof Android !== "undefined" && Android.pauseNativeAudio) {
+            Android.pauseNativeAudio(); // Java triggers onpause() externally
+        } else if (this._browserAudio) {
+            this._browserAudio.pause();
+        }
+    },
 
-          stop: function () {
-            if (typeof Android !== "undefined" && Android.stopNativeAudio) {
-              Android.stopNativeAudio();
-            } else if (window.currentWebAudioElement) {
-              window.currentWebAudioElement.pause();
-              window.currentWebAudioElement.currentTime = 0;
-            }
-            this.paused = true;
-          }
-        };
+    stop: function() {
+        if (typeof Android !== "undefined" && Android.stopNativeAudio) {
+            Android.stopNativeAudio(); // Java triggers onpause() externally
+        } else if (this._browserAudio) {
+            this._browserAudio.pause();
+            this._browserAudio = null;
+        }
+    },
+
+    _updateUI: function(symbol) {
+        if (!this.id) return;
+        var all = document.querySelectorAll('[data-id="' + this.id + '"] button');
+        for (var i = 0; i < all.length; i++) {
+            all[i].textContent = symbol;
+        }
+    }
+};
+
+function currentWrapper(id) {
+    try {
+    AudioControl.stop();
+        var el = document.querySelector('.audiowrap[data-id="' + id + '"]');
+        if (!(el && el.hasAttribute('src'))) throw 'no audio source: ' + id;
+        var src = el.getAttribute('src');
+        
+        setTimeout(function(){// Removed setTimeout so AudioControl.id updates synchronously!
+        AudioControl.init(id, src);
+        },100);
+    } catch(e) {
+        alert(e + '');
+    }
+}
+
+function audioClick(el) {
+    var targetId = el.dataset.id;
+    
+    if (AudioControl.id === targetId) {
+        if (AudioControl.paused) {
+            AudioControl.play();
+        } else {
+            AudioControl.pause();
+        }
+        return;
+    }
+    currentWrapper(targetId);
+}
+
+// Helper function to generate audio wrap HTML
+function createAudioWrap(dataId, src, name, size) {
+  return '<div onclick="audioClick(this)" data-id="' + dataId + '" data-bind="'+"media." + dataId + ".src"+'" data-size="'+size+'" src="' + src + '" class="audiowrap" style="white-space:nowrap;overflow:hidden;max-width:180px;border:solid thin;display:inline-block;padding:4px 8px;margin:4px;">' +
+    '<button>▶</button>' +
+    '<span data-name>' + name + '</span>' +
+    '<span data-size="'+size+'">' + size + '</span>' +
+    '</div>';
+}
+function createAudioWrap(dataId, src, name, size) {
+  var div = document.createElement('div');
+  div.setAttribute('onclick', 'audioClick(this)');
+  div.setAttribute('data-id', dataId);
+  div.setAttribute('data-bind', 'media.' + dataId + '.src');
+  div.setAttribute('data-size', size);
+  div.setAttribute('src', src);
+  div.className = 'audiowrap';
+  div.style.cssText = 'white-space:nowrap;overflow:hidden;max-width:180px;border:solid thin;display:inline-block;padding:4px 8px;margin:4px;';
+
+  var button = document.createElement('button');
+  button.appendChild(document.createTextNode('▶'));
+  div.appendChild(button);
+
+  var nameSpan = document.createElement('span');
+  nameSpan.setAttribute('data-name', name);
+  nameSpan.appendChild(document.createTextNode(name));
+  div.appendChild(nameSpan);
+
+  var sizeSpan = document.createElement('span');
+  sizeSpan.setAttribute('data-size', size);
+  sizeSpan.appendChild(document.createTextNode(size));
+  div.appendChild(sizeSpan);
+
+  return div;
+}
+
+// Helper function to generate audio button HTML
+function createAudioBtn(audioId) {
+  return '<div onclick="audioClick(this)" data-id="' + audioId + '" class="audioBtn" style="display:inline-block;border:1px solid #ccc;padding:4px 8px;margin:4px;">' +
+    '<button>▶</button>' +
+    '</div>';
+}
+
       // ======================== 2. IMAGE WRAPPER (with square preview) ========================
       window.createImageWrapper = function (
         wrapperId,
@@ -2474,11 +2569,11 @@
         }
         return current;
       }
-      function getTaskData(taskEl) {
+      function getTaskData(taskEl, selector) {
         var data = {};
         if (taskEl.hasAttribute("data-id"))
           data.id = taskEl.getAttribute("data-id");
-        var els = taskEl.querySelectorAll("[data-bind]");
+        var els = taskEl.querySelectorAll(selector ? selector : "[data-bind]");
         var i, el, bind, value;
         for (i = 0; i < els.length; i++) {
           el = els[i];
@@ -2523,7 +2618,7 @@
                 for (var i in data.media) {
                   var mediaDiv = createMediaElement(
                     data.media[i].type,
-                    "data.media[i].src",
+                    data.media[i].src,
                     data.media[i].name,
                     data.media[i].size,
                     i
@@ -2611,8 +2706,10 @@
             }
             if (
               el.classList.contains("time-input") ||
-              el.classList.contains("input-sec") ||
-              el.tagName.toLowerCase() == "select"
+              el.classList.contains("input-sec")
+              //here
+            ||
+            (el.tagName.toLowerCase() == "select") || (el.tagName.toLowerCase() == "input")
             ) {
               triggerChange(el);
             }
@@ -3529,16 +3626,19 @@ delegated listeners
           );
           if (!("tasks" in data))
             return alert("Your task list is empty. Please add a task first!");
-
+          AudioControl.stop();
+          openIframeOverlay();
           try {
-            openIframeOverlay();
-            showLoadingOverlay();
-            sendJsonToIframe(data);
-            setTimeout(hideLoadingOverlay, 800);
-          } catch (e) {
-            hideLoadingOverlay();
-            console.error("Operation failed:", e);
-          }
+    showLoadingOverlay();
+    setTimeout(function() {
+      sendJsonToIframe(data);
+    hideLoadingOverlay();
+    }, 50);
+  } catch(e) {
+    hideLoadingOverlay();
+    console.error("Operation failed:", e);
+  }
+          
         };
       }
 
@@ -3608,64 +3708,6 @@ delegated listeners
         }
       }
 
-      function saveToJson() {
-        var blob = new Blob([JSON.stringify(obj, null, 2)], {
-          type: "application/json"
-        });
-        var a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "scheduler_data.json";
-        a.click();
-        URL.revokeObjectURL(a.href);
-        //statusDiv.innerText="Saved JSON.";
-      }
-
-      function saveTo(data, s, n) {
-        var type = data.split(",")[0].split(":")[1].split(";")[0].trim();
-        data = atob(data.split(",")[1]);
-        //data = atob(data)
-        var blob = new Blob([data], { type: type });
-        var a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = n; //"scheduler_data.json";
-        prompt(s + "; " + n + "; " + type, blob.size + "; " + (s == blob.size));
-        a.click();
-        URL.revokeObjectURL(a.href);
-      }
-
-      function saveTo(dataURL, expectedSize, name) {
-        try {
-          // 1. Split header and base64
-          var parts = dataURL.split(",");
-          var header = parts[0];
-          var b64 = parts[1];
-          var type = header.split(":")[1].split(";")[0].trim();
-          // 2. Decode base64 -> binary string
-          var binary = atob(b64);
-          // 3. Convert binary string -> Uint8Array
-          var len = binary.length;
-          var bytes = new Uint8Array(len);
-          for (var i = 0; i < len; i++) {
-            bytes[i] = binary.charCodeAt(i);
-          }
-          // 4. Create blob with correct bytes
-          var blob = new Blob([bytes], { type: type });
-          // 5. Size check
-          var match = expectedSize == blob.size;
-          //alert( name + '; ' + type+ '\nExpected: ' + expectedSize + ', Got: ' + blob.size + ', Match: ' + match);
-          // 6. Trigger download
-          var a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = name;
-          document.body.appendChild(a); // needed for Firefox
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(a.href);
-        } catch (e) {
-          alert("saveTo:\n" + e);
-        }
-      }
-
       function saveToFile(data, type, title) {
         var blob = new Blob([data], { type: "application/octet-stream" });
         var fileName = sanitizeFileName(title) + "." + type;
@@ -3724,7 +3766,10 @@ delegated listeners
       UndoManager.prototype.record = function (key) {
         if (this.isApplying) return;
         var val = this.clone(this.getState(key));
-        this.undoStack.push({ key: key, val: val }); // store key + value
+        var related;
+        if(key == 'tasks') related= this.clone(this.getState('schedule'));
+        if(key == 'media') related= getTaskData( document.querySelector(".app-container:not(.hide)"), '.wrapper-sound [data-bind], .wrapper-img [data-bind]');
+        this.undoStack.push({ key: key, val: val, related:related }); // store key + value
         this.redoStack = [];
         if (this.undoStack.length > this.maxSize) this.undoStack.shift();
         updateUndoRedoButtons();
@@ -3735,12 +3780,15 @@ delegated listeners
         var patch = this.undoStack.pop();
 
         var currentVal = this.clone(this.getState(patch.key));
-        this.redoStack.push({ key: patch.key, val: currentVal });
+        var related;
+        if(patch.key == 'tasks') related= this.clone(this.getState('schedule'));
+        if(patch.key == 'media') related= getTaskData( document.querySelector(".app-container:not(.hide)"), '.wrapper-sound [data-bind], .wrapper-img [data-bind]');
+        this.redoStack.push({ key: patch.key, val: currentVal, related:related });
 
         this.isApplying = true;
-        this.setState(patch.key, patch.val); // pass key + old value
+        this.setState(patch.key, patch.val, patch.related); // pass key + old value
         this.isApplying = false;
-        return true;
+        updateUndoRedoButtons();// return true;
       };
 
       UndoManager.prototype.redo = function () {
@@ -3748,12 +3796,15 @@ delegated listeners
         var patch = this.redoStack.pop();
 
         var currentVal = this.clone(this.getState(patch.key));
-        this.undoStack.push({ key: patch.key, val: currentVal });
+        var related;
+        if(patch.key == 'tasks') related= this.clone(this.getState('schedule'));
+        if(patch.key == 'media') related= getTaskData( document.querySelector(".app-container:not(.hide)"), '.wrapper-sound [data-bind], .wrapper-img [data-bind]');
+        this.undoStack.push({ key: patch.key, val: currentVal, related:related });
 
         this.isApplying = true;
-        this.setState(patch.key, patch.val);
+        this.setState(patch.key, patch.val, patch.related);
         this.isApplying = false;
-        return true;
+        updateUndoRedoButtons();// return true;
       };
 
       UndoManager.prototype.canUndo = function () {
@@ -3775,7 +3826,7 @@ delegated listeners
           return getTaskData(document.querySelector("#media"));
         }
         if (key === "schedule")
-          return getTaskData(document.querySelector("#schedule tbody"));
+          return getTaskData(document.querySelector("#schedule"));
         var el = document.querySelector('[data-bind="' + key + '"]');
         //alert(key+'\n'+el.dataset.value);
         if (el) {
@@ -3792,7 +3843,7 @@ delegated listeners
         return undefined;
       }
 
-      function setState(key, val) {
+      function setState(key, val, related) {
         if (key === "app") {
           emptyTaskData("media");
           emptyTaskData("tasks");
@@ -3801,6 +3852,7 @@ delegated listeners
           rebuildTaskData(val, "tasks");
           rebuildTaskData(val, "schedule");
           setTaskData(document.querySelector(".app-container:not(.hide)"), val);
+          
         }
         if (key === "main") setTaskData(document.querySelector("#main"), val);
         if (key === "tasks") {
@@ -3808,6 +3860,7 @@ delegated listeners
           emptyTaskData(key);
           rebuildTaskData(val, key);
           setTaskData(document.querySelector("#tasks"), val);
+          if(related) setTaskData(document.querySelector("#schedule"), related);
         }
         if (key === "media") {
           document.querySelector('[data-for="' + "main" + '"]').click();
@@ -3815,12 +3868,15 @@ delegated listeners
           emptyTaskData(key);
           rebuildTaskData(val, key);
           setTaskData(document.querySelector("#media"), val);
+          
+          if(related) setTaskData( document.querySelector(".app-container:not(.hide)"), related);
         }
         if (key === "schedule") {
           document.querySelector('[data-for="' + key + '"]').click();
           emptyTaskData(key);
           rebuildTaskData(val, key);
-          setTaskData(document.querySelector("#schedule tbody"), val);
+          setTaskData(document.querySelector("#schedule"), val);
+          calcTotalDuration();
         }
         var el = document.querySelector('[data-bind="' + key + '"]');
         if (el) {
@@ -3886,10 +3942,12 @@ delegated listeners
 
       // 5. Buttons
       document.getElementById("appUndoBtn").onclick = function () {
-        if (undoMgr.undo()) updateUndoRedoButtons();
+        undoMgr.undo()
+        //if (undoMgr.undo()) updateUndoRedoButtons();
       };
       document.getElementById("appRedoBtn").onclick = function () {
-        if (undoMgr.redo()) updateUndoRedoButtons();
+        undoMgr.redo()
+        //if (undoMgr.redo()) updateUndoRedoButtons();
       };
 
       function updateUndoRedoButtons() {
@@ -4693,7 +4751,7 @@ delegated listeners
 
         <div class="modal-body">
           <ul class="modal-list">
-            <li><strong data-label="about-version">Version</strong> 1.0.1</li>
+            <li><strong data-label="about-version">Version</strong> 1.0.2</li>
             <li>
               <strong data-label="about-issue">Issue Tracker</strong>
               <a
